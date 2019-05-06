@@ -4,7 +4,7 @@ WORKDIR /app
 COPY . ./
 # RUN yarn
 # RUN yarn build
-RUN npm install --silent
+RUN npm install
 RUN npm run build
 
 # Stage 2 - the production environment
