@@ -103,7 +103,8 @@ class ReportTool extends React.Component {
        let version  = matches[1];
        let date     = matches[2];
        let mod      = matches[3];
-       let value    = version + '|' + date;
+//        let value    = version + '|' + date;
+       let value    = date + '|' + version;
        let label    = date + ' (' + version + ')';
        let option   = renderOption(label, value);
        datesHash[value] = value;
@@ -112,12 +113,15 @@ class ReportTool extends React.Component {
      let mods = Object.keys(modsHash);
      let dateOptions = [];
      Object.keys(datesHash).sort().forEach(function(key) {
-       let partsArray = key.split('|'), version = partsArray[0], date = partsArray[1];
-       let value   = version + '|' + date;
+//        let partsArray = key.split('|'), version = partsArray[0], date = partsArray[1];
+       let partsArray = key.split('|'), date = partsArray[0], version = partsArray[1];
+//        let value   = version + '|' + date;
+       let value    = date + '|' + version;
        let label   = date + ' (' + version + ')';
        let option = renderOption(label, value);
        dateOptions.unshift(option);
      });
+     dateOptions = dateOptions.sort();
      let optionMods = mods.map((mod) => <option key={mod} value={mod}>{mod}</option>);
      this.setState({ optionMods: optionMods });
      let numMods = mods.length;
@@ -157,6 +161,7 @@ class ReportTool extends React.Component {
     const target = event.target;
     const name = target.name;
 
+console.log('set ' + name + ' value ' + event.target.value);
     this.setState({
       [name]: event.target.value
     });
@@ -173,8 +178,10 @@ class ReportTool extends React.Component {
     if (this.state.mod === undefined) { errorMessage += 'Choose a mod\n';  }
     if (errorMessage !== '') { alert(errorMessage); return; }
     let arrDateLoad = this.state.dateLoad.split('|');
-    let versionLoad = arrDateLoad[0];
-    let dateLoad = arrDateLoad[1];
+//     let versionLoad = arrDateLoad[0];
+//     let dateLoad = arrDateLoad[1];
+    let dateLoad    = arrDateLoad[0];
+    let versionLoad = arrDateLoad[1];
     let urlLoad = generateJsonUrl(versionLoad, dateLoad, this.state.mod, this.state.baseUrl);
 
     console.log('download ' + urlLoad);
@@ -191,10 +198,14 @@ class ReportTool extends React.Component {
           let doneCount = this.state.pageNumber * this.state.entriesPerPage - 1;
           let matchCount = 0;
           for (let field in response.general_stats) {
+            if (field.match(/_with_null_/)) { continue; }
+            let renamedField = field;
+            if (renamedField.match(/_with_non_null_/)) { 
+              renamedField = renamedField.replace(/_with_non_null_/, "_with_"); } 
             let value = response.general_stats[field];
             if (value === null) { value = 0; }
             if (value % 1 !== 0) { value = value.toFixed(2); }
-            const item = {field: field, value: value};
+            const item = {field: renamedField, value: value};
             tempRowsTableStats.push(item);
           }
           this.setState({
@@ -310,8 +321,10 @@ class ReportTool extends React.Component {
     if (this.state.mod === undefined) { errorMessage += 'Choose a mod\n';  }
     if (errorMessage !== '') { alert(errorMessage); return; }
     let arrDateDownload = this.state.dateDownload.split('|');
-    let versionDownload = arrDateDownload[0];
-    let dateDownload = arrDateDownload[1];
+//     let versionDownload = arrDateDownload[0];
+//     let dateDownload = arrDateDownload[1];
+    let dateDownload    = arrDateDownload[0];
+    let versionDownload = arrDateDownload[1];
     let urlDownload = generateJsonUrl(versionDownload, dateDownload, this.state.mod, this.state.baseUrl);
     console.log('download ' + urlDownload);
 
@@ -335,8 +348,10 @@ class ReportTool extends React.Component {
     if (this.state.mod === undefined) { errorMessage += 'Choose a mod\n';  }
     if (errorMessage !== '') { alert(errorMessage); return; }
     let arrDateDownload = this.state.dateDownload.split('|');
-    let versionDownload = arrDateDownload[0];
-    let dateDownload = arrDateDownload[1];
+//     let versionDownload = arrDateDownload[0];
+//     let dateDownload = arrDateDownload[1];
+    let dateDownload    = arrDateDownload[0];
+    let versionDownload = arrDateDownload[1];
     let urlDownload = generateJsonUrl(versionDownload, dateDownload, this.state.mod, this.state.baseUrl);
     console.log('download ' + urlDownload);
     window.open(urlDownload);
@@ -352,12 +367,16 @@ class ReportTool extends React.Component {
     if (this.state.mod === undefined) {       errorMessage += 'Choose a mod\n';               }
     if (errorMessage !== '') { alert(errorMessage); return; }
     let arrDate1 = this.state.date1.split('|');
-    let version1 = arrDate1[0];
-    let date1    = arrDate1[1];
+//     let version1 = arrDate1[0];
+//     let date1    = arrDate1[1];
+    let date1    = arrDate1[0];
+    let version1 = arrDate1[1];
     let url1     = generateJsonUrl(version1, date1, this.state.mod, this.state.baseUrl);
     let arrDate2 = this.state.date2.split('|');
-    let version2 = arrDate2[0];
-    let date2    = arrDate2[1];
+//     let version2 = arrDate2[0];
+//     let date2    = arrDate2[1];
+    let date2    = arrDate2[0];
+    let version2 = arrDate2[1];
     let url2     = generateJsonUrl(version2, date2, this.state.mod, this.state.baseUrl);
     this.setState({headerStatsDate1: date1});
     this.setState({headerStatsDate2: date2});
@@ -380,13 +399,18 @@ class ReportTool extends React.Component {
                 this.setState({ rowsTableDiff: [] });
 
                 for (let field in response1.general_stats) {
+                  if (field.match(/_with_null_/)) { continue; }
+                  let renamedField = field;
+                  if (renamedField.match(/_with_non_null_/)) { 
+                    renamedField = renamedField.replace(/_with_non_null_/, "_with_"); } 
+//    if (urlRoot.match(/textpresso/)) { urlTemplate = urlRoot + 'index.xml'; }
                   let value1 = response1.general_stats[field];
                   let value2 = response2.general_stats[field];
                   if (value1 === null) { value1 = 0; }
                   if (value2 === null) { value2 = 0; }
                   if (value1 % 1 !== 0) { value1 = value1.toFixed(2); }
                   if (value2 % 1 !== 0) { value2 = value2.toFixed(2); }
-                  const item = {field: field, date1: value1, date2: value2};
+                  const item = {field: renamedField, date1: value1, date2: value2};
                   tempRowsTableStats.push(item);
                 }
                 this.setState({
