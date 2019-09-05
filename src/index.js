@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 
+
 function generateJsonUrl(version, date, mod, baseUrl) {
   return(baseUrl + version + '/' + date + '/' + date + '_' + mod + '.json');
 }
