@@ -135,6 +135,7 @@ class ReportTool extends React.Component {
      diffFieldsHash['do_description'] = "DO Description";
      diffFieldsHash['go_description'] = "GO Description";
      diffFieldsHash['orthology_description'] = "Orthology Description";
+     diffFieldsHash['tissue_expression_description'] = "Expression Description";
      
      this.setState({ diffFieldsHash: diffFieldsHash });
      let diffFieldsArray = Object.keys(diffFieldsHash);
@@ -207,6 +208,11 @@ console.log('set ' + name + ' value ' + event.target.value);
             if (value % 1 !== 0) { value = value.toFixed(2); }
             const item = {field: renamedField, value: value};
             tempRowsTableStats.push(item);
+            if (field === "number_genes_with_non_null_description") {		// for now while Valerio hasn't put the stat in 
+              let thisValue = response.general_stats["total_number_of_genes"] - response.general_stats["number_genes_with_non_null_description"];
+              const item = {field: "number_genes_with_no_description", value: thisValue};
+              tempRowsTableStats.push(item); 
+            }
           }
           this.setState({
             rowsTableLoadStats: tempRowsTableStats
@@ -412,6 +418,12 @@ console.log('set ' + name + ' value ' + event.target.value);
                   if (value2 % 1 !== 0) { value2 = value2.toFixed(2); }
                   const item = {field: renamedField, date1: value1, date2: value2};
                   tempRowsTableStats.push(item);
+                  if (field === "number_genes_with_non_null_description") {		// for now while Valerio hasn't put the stat in 
+                    let thisValue1 = response1.general_stats["total_number_of_genes"] - response1.general_stats["number_genes_with_non_null_description"];
+                    let thisValue2 = response2.general_stats["total_number_of_genes"] - response2.general_stats["number_genes_with_non_null_description"];
+                    const item = {field: "number_genes_with_no_description", date1: thisValue1, date2: thisValue2};
+                    tempRowsTableStats.push(item); 
+                  }
                 }
                 this.setState({
                   rowsTableDiffStats: tempRowsTableStats
