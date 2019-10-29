@@ -2,7 +2,6 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 
-
 function generateJsonUrl(version, date, mod, baseUrl) {
   return(baseUrl + version + '/' + date + '/' + date + '_' + mod + '.json');
 }
@@ -20,6 +19,9 @@ class ReportTool extends React.Component {
       rowsTableLoadStats: [],
       rowsTableDiff: [],
       rowsTableDiffStats: [],
+      showDivTopArrowButton: false,
+      showDivMenuButton2A: false,
+      showDivMenuButton2C: false,
       showDivDiffLoading: false,
       showDivLoadLoading: false,
       showDivLoadResult: false,
@@ -55,6 +57,8 @@ class ReportTool extends React.Component {
       diffFieldsHash: [],
       dateOptions: [],
       numDateOptions: 0,
+      loadFieldsMatchCount: [],
+      showLabelFieldsMatchCount: [],
       checkboxDiffFields: [],
       checkboxDescription: true,
       checkboxDoDescription: true,
@@ -67,6 +71,9 @@ class ReportTool extends React.Component {
     this.handleInputChange = this.handleInputChange.bind(this);
     this.handleInputChangeCheckboxDiffFields = this.handleInputChangeCheckboxDiffFields.bind(this);
 
+    this.handleClickTopArrowButton = this.handleClickTopArrowButton.bind(this);
+    this.handleClickButton2A = this.handleClickButton2A.bind(this);
+    this.handleClickButton2C = this.handleClickButton2C.bind(this);
     this.handleChange = this.handleChange.bind(this);
     this.handleChangePage = this.handleChangePage.bind(this);
     this.handleSubmitCompare = this.handleSubmitCompare.bind(this);
@@ -80,7 +87,7 @@ class ReportTool extends React.Component {
 
  componentDidMount() {
    let urlRoot = process.env.REACT_APP_URLROOT;
-//    console.log("urlRoot " + urlRoot);	
+//    console.log("urlRoot " + urlRoot);	// not getting this value when running in docker
    if (urlRoot === undefined) { urlRoot = 'http://reports.alliancegenome.org/'; }
 
    let urlTemplate = urlRoot;
@@ -175,6 +182,10 @@ console.log('set ' + name + ' value ' + event.target.value);
   }
 
   processSubmitLoadAction() {
+    this.setState({showDivDiffResult: false});
+    this.setState({showDivTopArrowButton: false});
+    this.setState({showDivMenuButton2A: false});
+    this.setState({showDivMenuButton2C: false});
     let errorMessage = '';
     if (this.state.dateLoad === undefined) { errorMessage += 'Choose a file\n';  }
     if (this.state.mod === undefined) { errorMessage += 'Choose a mod\n';  }
@@ -187,6 +198,10 @@ console.log('set ' + name + ' value ' + event.target.value);
     let urlLoad = generateJsonUrl(versionLoad, dateLoad, this.state.mod, this.state.baseUrl);
 
     console.log('download ' + urlLoad);
+    this.setState({showDivMenuButton2C: true});
+    this.setState({showDivTopArrowButton: true});
+    var element = document.getElementById("anchor2Cresult");
+    element.scrollIntoView();
     this.setState({showDivLoadLoading: true});
     fetch(urlLoad)
       .then(response => response.json())
@@ -199,6 +214,13 @@ console.log('set ' + name + ' value ' + event.target.value);
           let skipCount = (this.state.pageNumber - 1) * this.state.entriesPerPage - 1;
           let doneCount = this.state.pageNumber * this.state.entriesPerPage - 1;
           let matchCount = 0;
+          let fieldsMatchCount = [];
+          let showFieldsMatchCount = [];
+          for (let j in this.state.diffFieldsArray) {
+            let diffField = this.state.diffFieldsArray[j];
+            if (this.state.checkboxDiffFields[diffField] === true) { showFieldsMatchCount[diffField] = true; }
+              else { showFieldsMatchCount[diffField] = false; }
+            fieldsMatchCount[diffField] = 0; }
           for (let field in response.general_stats) {
             if (field.match(/_with_null_/)) { continue; }
             let renamedField = field;
@@ -234,12 +256,13 @@ console.log('set ' + name + ' value ' + event.target.value);
             if ('set_final_go_ids_c' in response.data[i].stats) {
               count_set_final_go_ids_c = response.data[i].stats.set_final_go_ids_c.length; }
             let count_set_final_go_ids = count_set_final_go_ids_f + count_set_final_go_ids_p + count_set_final_go_ids_c;
+            
             if ( ( (this.state.loadComparisonGoids === '>=') && 
                    (count_set_final_go_ids >= this.state.loadGoidsCount) ) 
               || ( (this.state.loadComparisonGoids === '<=') && 
                    (count_set_final_go_ids <= this.state.loadGoidsCount) ) 
               || ( (this.state.loadComparisonGoids === '==') && 
-                   (count_set_final_go_ids === this.state.loadGoidsCount) ) ) { 
+                   (count_set_final_go_ids === this.state.loadGoidsCount) ) ) {
 
               for (let j in this.state.diffFieldsArray) {
                 let diffField = this.state.diffFieldsArray[j];
@@ -279,19 +302,20 @@ console.log('set ' + name + ' value ' + event.target.value);
                                      genenamePass = true; } } } } }
                     if ( (keywordPass === true) && (genenamePass === true) ) {
                       geneHasSomeData = true;
+                      fieldsMatchCount[diffField] += 1;
                       if ( (matchCount > skipCount) && (matchCount <= doneCount) ) {
-
-                      const item = {gene_id: gene_id, gene_name: gene_name, field: diffField, text: diffFieldValue};
-                      tempRowsTableLoad.push(item);
+                        const item = {gene_id: gene_id, gene_name: gene_name, field: diffField, text: diffFieldValue};
+                        tempRowsTableLoad.push(item);
               } } } } }
 
               if (geneHasSomeData) { matchCount++; }
-              if (matchCount > doneCount) { break; }
+//                         loadFieldsMatchCount: [],
+//               if (matchCount > doneCount) { break; }			// to process entries only until desired amount, Ranjana wants to always process everything to get counts
             }
           }
-          this.setState({
-            rowsTableLoad: tempRowsTableLoad
-          });
+          this.setState({ rowsTableLoad: tempRowsTableLoad });
+          this.setState({ loadFieldsMatchCount: fieldsMatchCount });
+          this.setState({ showLabelFieldsMatchCount: showFieldsMatchCount });
 
       })
   } // processSubmitLoadAction()
@@ -364,6 +388,38 @@ console.log('set ' + name + ' value ' + event.target.value);
     window.open(urlDownload);
   }
 
+  handleClickTopArrowButton(event) {
+    console.log('click ' + event.target.value);
+    var element = document.getElementById("anchor2Acontrol");
+    element.scrollIntoView();
+    this.setState({showDivDiffResult: false});
+    this.setState({showDivLoadResult: false});
+    this.setState({showDivTopArrowButton: false});
+    this.setState({showDivMenuButton2A: false});
+    this.setState({showDivMenuButton2C: false});
+    event.preventDefault();
+  } // handleClickButton2A(event)
+
+  handleClickButton2A(event) {
+    console.log('click ' + event.target.value);
+    var element = document.getElementById("anchor2Acontrol");
+    element.scrollIntoView();
+    this.setState({showDivTopArrowButton: false});
+    this.setState({showDivMenuButton2A: false});
+    this.setState({showDivMenuButton2C: false});
+    event.preventDefault();
+  } // handleClickButton2A(event)
+
+  handleClickButton2C(event) {
+    console.log('click ' + event.target.value);
+    var element = document.getElementById("anchor2Ccontrol");
+    element.scrollIntoView();
+    this.setState({showDivTopArrowButton: false});
+    this.setState({showDivMenuButton2A: false});
+    this.setState({showDivMenuButton2C: false});
+    event.preventDefault();
+  } // handleClickButton2C(event)
+
   handleSubmitCompare(event) {
     let t0 = Date.now();
     console.log('submit ' + event.target.value);
@@ -391,6 +447,11 @@ console.log('set ' + name + ' value ' + event.target.value);
     this.setState({headerDiffDate2: date2});
     this.setState({showDivDiffLoading: true});
     this.setState({showDivDiffNavigation: true});
+    this.setState({showDivMenuButton2A: true});
+    this.setState({showDivTopArrowButton: true});
+    this.setState({showDivLoadResult: false});
+    var element = document.getElementById("anchor2Aresult");
+    element.scrollIntoView();
 
     fetch(url1)
       .then(response1 => response1.json())
@@ -585,6 +646,10 @@ console.log('set ' + name + ' value ' + event.target.value);
   render() {
     return (
       <form>
+        <div style={{display: this.state.showDivTopArrowButton ? 'block' : 'none', position: 'fixed', top: 25, right: 50}}><span style={{color: 'lime', fontSize: 30}} onClick={this.handleClickTopArrowButton}>&#8593;</span></div>
+        <div style={{display: this.state.showDivMenuButton2A ? 'block' : 'none', position: 'fixed', top: 25, right: 25}}><span style={{color: 'lime', fontSize: 30}} onClick={this.handleClickButton2A}>&#9776;</span></div>
+        <div style={{display: this.state.showDivMenuButton2C ? 'block' : 'none', position: 'fixed', top: 25, right: 25}}><span style={{color: 'lime', fontSize: 30}} onClick={this.handleClickButton2C}>&#9776;</span></div>
+
         <label>
           <h3>1. Select your Mod:</h3>
           <select name="mod" id="mod" size={this.state.numMods} defaultValue="" onChange={this.handleChange}>
@@ -593,7 +658,7 @@ console.log('set ' + name + ' value ' + event.target.value);
         </label><br/><br/>
         <hr />
 
-        <h3>2.a. Compare Files</h3>
+        <h3 id='anchor2Aresult'>2.a. Compare Files</h3>
 
         <div id='div_diff_loading' style={{display: this.state.showDivDiffLoading ? 'block' : 'none', fontSize: 24}}>LOADING<img alt="image_LOADING" width="50" height="50" src="http://tazendra.caltech.edu/~azurebrd/cgi-bin/testing/amigo/loading.gif"/><br/><br/>
         </div>
@@ -664,7 +729,7 @@ console.log('set ' + name + ' value ' + event.target.value);
         </div>
   */}
 
-        <table>
+        <table id='anchor2Acontrol'>
         <tbody id="table_compare_body" name="table_compare_body">
         <tr><td style={{verticalAlign: 'top'}}>
         <label>
@@ -761,7 +826,7 @@ Doesn't work cross origin (across domains)
 
         <hr />
 
-        <h3>2.c. View a file</h3>
+        <h3 id='anchor2Cresult'>2.c. View a file</h3>
 
         <div id='div_load_loading' style={{display: this.state.showDivLoadLoading ? 'block' : 'none', fontSize: 24}}>LOADING<img alt="image_LOADING" width="50" height="50" src="http://tazendra.caltech.edu/~azurebrd/cgi-bin/testing/amigo/loading.gif"/><br/><br/>
         </div>
@@ -788,6 +853,19 @@ Doesn't work cross origin (across domains)
             </table>
           </label>
           <br />
+        <label>
+          Field counts: <br />
+        </label>
+        {this.state.diffFieldsArray.map(function(item){
+          let name = 'matchcount_' + item;
+          let label_key = 'label_key_matchcount_' + item;
+          return (
+            <label key={label_key} style={{display: this.state.showLabelFieldsMatchCount[item] ? 'block' : 'none'}}>
+              {item} count: {this.state.loadFieldsMatchCount[item]}<br/>
+            </label>
+          )}, this)}
+          <br />
+         
           <label>
             File Load Result:<br/>
             <input type="button" value="Previous Page" onClick={this.handleSubmitLoadPrevPage}/>
@@ -826,7 +904,7 @@ Doesn't work cross origin (across domains)
           </label>
         </div>
 
-        <label>
+        <label id='anchor2Ccontrol'>
           Select file to view:<br/>
           <select name="dateLoad" id="dateLoad" size={this.state.numDateOptions} onChange={this.handleChange}>
             {this.state.dateOptions}
