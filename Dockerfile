@@ -2,7 +2,7 @@
 FROM node:8 as react-build
 WORKDIR /app
 COPY . ./
-ENV REACT_APP_URLROOT="http://reports.alliancegenome.org/"
+ENV REACT_APP_URLROOT="https://reports.alliancegenome.org/"
 # RUN yarn
 # RUN yarn build
 RUN npm install

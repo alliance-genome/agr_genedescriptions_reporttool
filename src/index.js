@@ -88,7 +88,7 @@ class ReportTool extends React.Component {
  componentDidMount() {
    let urlRoot = process.env.REACT_APP_URLROOT;
    console.log("urlRoot " + urlRoot);	// not getting this value when running in docker
-   if (urlRoot === undefined) { urlRoot = 'http://reports.alliancegenome.org/'; }
+   if (urlRoot === undefined) { urlRoot = 'https://reports.alliancegenome.org/'; }
 
    let urlTemplate = urlRoot;
    if (urlRoot.match(/textpresso/)) { urlTemplate = urlRoot + 'index.xml'; }
