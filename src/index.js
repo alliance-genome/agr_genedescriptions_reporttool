@@ -36,6 +36,7 @@ class ReportTool extends React.Component {
       mod: undefined,
       diffKeywordFilter: '',
       diffGeneNameFilter: '',
+      loadOntologyFilter: '',
       loadKeywordFilter: '',
       loadGeneNameFilter: '',
       checkboxDiffKeywordFilter: false,
@@ -87,7 +88,7 @@ class ReportTool extends React.Component {
 
  componentDidMount() {
    let urlRoot = process.env.REACT_APP_URLROOT;
-   console.log("urlRoot " + urlRoot);	// not getting this value when running in docker
+//    console.log("urlRoot " + urlRoot);	// not getting this value when running in docker
    if (urlRoot === undefined) { urlRoot = 'https://reports.alliancegenome.org/'; }
 
    let urlTemplate = urlRoot;
@@ -245,17 +246,29 @@ console.log('set ' + name + ' value ' + event.target.value);
             let gene_id = response.data[i].gene_id;
             let gene_name = response.data[i].gene_name;
             let geneHasSomeData = false;
-
+            let gene_ontology_ids = [];
             let count_set_final_go_ids_f = 0;
             let count_set_final_go_ids_p = 0;
             let count_set_final_go_ids_c = 0;
             if ('set_final_go_ids_f' in response.data[i].stats) {
+              for (let j in response.data[i].stats.set_final_go_ids_f) {
+                gene_ontology_ids.push(response.data[i].stats.set_final_go_ids_f[j]); }
               count_set_final_go_ids_f = response.data[i].stats.set_final_go_ids_f.length; }
             if ('set_final_go_ids_p' in response.data[i].stats) {
+              for (let j in response.data[i].stats.set_final_go_ids_p) {
+                gene_ontology_ids.push(response.data[i].stats.set_final_go_ids_p[j]); }
               count_set_final_go_ids_p = response.data[i].stats.set_final_go_ids_p.length; }
             if ('set_final_go_ids_c' in response.data[i].stats) {
+              for (let j in response.data[i].stats.set_final_go_ids_c) {
+                gene_ontology_ids.push(response.data[i].stats.set_final_go_ids_c[j]); }
               count_set_final_go_ids_c = response.data[i].stats.set_final_go_ids_c.length; }
-            let count_set_final_go_ids = count_set_final_go_ids_f + count_set_final_go_ids_p + count_set_final_go_ids_c;
+            let count_set_final_go_ids = count_set_final_go_ids_c + count_set_final_go_ids_p + count_set_final_go_ids_c;
+            if ('set_final_do_ids' in response.data[i].stats) {
+              for (let j in response.data[i].stats.set_final_do_ids) {
+                gene_ontology_ids.push(response.data[i].stats.set_final_do_ids[j]); } }
+            if ('set_final_expression_ids' in response.data[i].stats) {
+              for (let j in response.data[i].stats.set_final_expression_ids) {
+                gene_ontology_ids.push(response.data[i].stats.set_final_expression_ids[j]); } }
             
             if ( ( (this.state.loadComparisonGoids === '>=') && 
                    (count_set_final_go_ids >= this.state.loadGoidsCount) ) 
@@ -272,6 +285,7 @@ console.log('set ' + name + ' value ' + event.target.value);
                        ( ( this.state.checkboxHasNoData ) && (diffFieldValue === '') ) ) {
                     let keywordPass = false;
                     let genenamePass = false;
+                    let ontologyPass = false;
                     if (this.state.loadKeywordFilter === '') { keywordPass = true; }
                       else {
                         let lines = this.state.loadKeywordFilter.split("\n");
@@ -300,7 +314,14 @@ console.log('set ' + name + ' value ' + event.target.value);
                                  else {							// case sensitive
                                    if (gene_name === lines[k]) {
                                      genenamePass = true; } } } } }
-                    if ( (keywordPass === true) && (genenamePass === true) ) {
+                    if (this.state.loadOntologyFilter === '') { ontologyPass = true; }
+                      else {
+                        let lines = this.state.loadOntologyFilter.split("\n");
+                        for (let k in lines) {
+                          for (let l in gene_ontology_ids) {
+                            if (lines[k].toUpperCase() === gene_ontology_ids[l].toUpperCase()) { ontologyPass = true; } }
+                    } }
+                    if ( (keywordPass === true) && (genenamePass === true) && (ontologyPass === true) ) {
                       geneHasSomeData = true;
                       fieldsMatchCount[diffField] += 1;
                       if ( (matchCount > skipCount) && (matchCount <= doneCount) ) {
@@ -1011,6 +1032,17 @@ Doesn't work cross origin (across domains)
             checked={this.state.checkboxLoadKeywordFilter}
             onChange={this.handleInputChange} />
           Case sensitive<br/>
+        </label>
+        <br />
+        <label>
+          Optional ontology ID filter:<br/>
+          <textarea
+            name="loadOntologyFilter"
+            id="loadOntologyFilter"
+            type="text"
+            size="100"
+            value={this.state.loadOntologyFilter}
+            onChange={this.handleChange} /><br/>
         </label>
         <br />
         <label>
