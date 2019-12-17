@@ -22,6 +22,12 @@ class ReportTool extends React.Component {
       showDivTopArrowButton: false,
       showDivMenuButton2A: false,
       showDivMenuButton2C: false,
+      backgroundDiffTab: 'white',
+      backgroundDownloadTab: 'white',
+      backgroundLoadTab: 'white',
+      showDivDiffSection: false,
+      showDivDownloadSection: false,
+      showDivLoadSection: false,
       showDivDiffLoading: false,
       showDivLoadLoading: false,
       showDivLoadResult: false,
@@ -72,6 +78,9 @@ class ReportTool extends React.Component {
     this.handleInputChange = this.handleInputChange.bind(this);
     this.handleInputChangeCheckboxDiffFields = this.handleInputChangeCheckboxDiffFields.bind(this);
 
+    this.handleClickShowSectionDiff = this.handleClickShowSectionDiff.bind(this);
+    this.handleClickShowSectionDownload = this.handleClickShowSectionDownload.bind(this);
+    this.handleClickShowSectionView = this.handleClickShowSectionView.bind(this);
     this.handleClickTopArrowButton = this.handleClickTopArrowButton.bind(this);
     this.handleClickButton2A = this.handleClickButton2A.bind(this);
     this.handleClickButton2C = this.handleClickButton2C.bind(this);
@@ -114,8 +123,8 @@ class ReportTool extends React.Component {
        let mod      = matches[3];
 //        let value    = version + '|' + date;
        let value    = date + '|' + version;
-       let label    = date + ' (' + version + ')';
-       let option   = renderOption(label, value);
+//        let label    = date + ' (' + version + ')';
+//        let option   = renderOption(label, value);
        datesHash[value] = value;
        modsHash[mod] = mod;
      }
@@ -199,6 +208,7 @@ console.log('set ' + name + ' value ' + event.target.value);
     let urlLoad = generateJsonUrl(versionLoad, dateLoad, this.state.mod, this.state.baseUrl);
 
     console.log('download ' + urlLoad);
+    this.setState({showDivMenuButton2A: false});
     this.setState({showDivMenuButton2C: true});
     this.setState({showDivTopArrowButton: true});
     var element = document.getElementById("anchor2Cresult");
@@ -409,15 +419,52 @@ console.log('set ' + name + ' value ' + event.target.value);
     window.open(urlDownload);
   }
 
+  handleClickShowSectionDiff(event) {
+    console.log('click ' + event.target.value);
+    this.setState({showDivDiffSection: true});
+    this.setState({showDivDownloadSection: false});
+    this.setState({showDivLoadSection: false});
+    this.setState({backgroundDiffTab: '#ddd'});
+    this.setState({backgroundDownloadTab: 'white'});
+    this.setState({backgroundLoadTab: 'white'});
+//     var element = document.getElementById("anchor2Acontrol");
+//     element.scrollIntoView();
+    event.preventDefault();
+  } // handleClickShowSectionDiff(event)
+  handleClickShowSectionDownload(event) {
+    console.log('click ' + event.target.value);
+    this.setState({showDivDiffSection: false});
+    this.setState({showDivDownloadSection: true});
+    this.setState({showDivLoadSection: false});
+    this.setState({backgroundDiffTab: 'white'});
+    this.setState({backgroundDownloadTab: '#ddd'});
+    this.setState({backgroundLoadTab: 'white'});
+//     var element = document.getElementById("anchor2Bcontrol");
+//     element.scrollIntoView();
+    event.preventDefault();
+  } // handleClickShowSectionDownload(event)
+  handleClickShowSectionView(event) {
+    console.log('click ' + event.target.value);
+    this.setState({showDivDiffSection: false});
+    this.setState({showDivDownloadSection: false});
+    this.setState({showDivLoadSection: true});
+    this.setState({backgroundDiffTab: 'white'});
+    this.setState({backgroundDownloadTab: 'white'});
+    this.setState({backgroundLoadTab: '#ddd'});
+//     var element = document.getElementById("div_section_load");
+//     element.scrollIntoView();
+    event.preventDefault();
+  } // handleClickShowSectionView(event)
+
   handleClickTopArrowButton(event) {
     console.log('click ' + event.target.value);
-    var element = document.getElementById("anchor2Acontrol");
+    var element = document.getElementById("div_section_mod");
     element.scrollIntoView();
     this.setState({showDivDiffResult: false});
     this.setState({showDivLoadResult: false});
-    this.setState({showDivTopArrowButton: false});
-    this.setState({showDivMenuButton2A: false});
-    this.setState({showDivMenuButton2C: false});
+//     this.setState({showDivTopArrowButton: false});
+//     this.setState({showDivMenuButton2A: false});
+//     this.setState({showDivMenuButton2C: false});
     event.preventDefault();
   } // handleClickButton2A(event)
 
@@ -425,9 +472,9 @@ console.log('set ' + name + ' value ' + event.target.value);
     console.log('click ' + event.target.value);
     var element = document.getElementById("anchor2Acontrol");
     element.scrollIntoView();
-    this.setState({showDivTopArrowButton: false});
-    this.setState({showDivMenuButton2A: false});
-    this.setState({showDivMenuButton2C: false});
+//     this.setState({showDivTopArrowButton: false});
+//     this.setState({showDivMenuButton2A: false});
+//     this.setState({showDivMenuButton2C: false});
     event.preventDefault();
   } // handleClickButton2A(event)
 
@@ -435,9 +482,9 @@ console.log('set ' + name + ' value ' + event.target.value);
     console.log('click ' + event.target.value);
     var element = document.getElementById("anchor2Ccontrol");
     element.scrollIntoView();
-    this.setState({showDivTopArrowButton: false});
-    this.setState({showDivMenuButton2A: false});
-    this.setState({showDivMenuButton2C: false});
+//     this.setState({showDivTopArrowButton: false});
+//     this.setState({showDivMenuButton2A: false});
+//     this.setState({showDivMenuButton2C: false});
     event.preventDefault();
   } // handleClickButton2C(event)
 
@@ -469,6 +516,7 @@ console.log('set ' + name + ' value ' + event.target.value);
     this.setState({showDivDiffLoading: true});
     this.setState({showDivDiffNavigation: true});
     this.setState({showDivMenuButton2A: true});
+    this.setState({showDivMenuButton2C: false});
     this.setState({showDivTopArrowButton: true});
     this.setState({showDivLoadResult: false});
     var element = document.getElementById("anchor2Aresult");
@@ -667,82 +715,98 @@ console.log('set ' + name + ' value ' + event.target.value);
   render() {
     return (
       <form>
-        <div style={{display: this.state.showDivTopArrowButton ? 'block' : 'none', position: 'fixed', top: 25, right: 50}}><span style={{color: 'lime', fontSize: 30}} onClick={this.handleClickTopArrowButton}>&#8593;</span></div>
+        <div style={{display: this.state.showDivTopArrowButton ? 'block' : 'none', position: 'fixed', top: 25, right: 75}}><span style={{color: 'lime', fontSize: 30}} onClick={this.handleClickTopArrowButton}>&#8593;</span></div>
         <div style={{display: this.state.showDivMenuButton2A ? 'block' : 'none', position: 'fixed', top: 25, right: 25}}><span style={{color: 'lime', fontSize: 30}} onClick={this.handleClickButton2A}>&#9776;</span></div>
         <div style={{display: this.state.showDivMenuButton2C ? 'block' : 'none', position: 'fixed', top: 25, right: 25}}><span style={{color: 'lime', fontSize: 30}} onClick={this.handleClickButton2C}>&#9776;</span></div>
 
-        <label>
-          <h3>1. Select your Mod:</h3>
-          <select name="mod" id="mod" size={this.state.numMods} defaultValue="" onChange={this.handleChange}>
-            {this.state.optionMods}
-          </select>
-        </label><br/><br/>
-        <hr />
-
-        <h3 id='anchor2Aresult'>2.a. Compare Files</h3>
-
-        <div id='div_diff_loading' style={{display: this.state.showDivDiffLoading ? 'block' : 'none', fontSize: 24}}>LOADING<img alt="image_LOADING" width="50" height="50" src="http://tazendra.caltech.edu/~azurebrd/cgi-bin/testing/amigo/loading.gif"/><br/><br/>
-        </div>
-        <div id='div_diff_result' style={{display: this.state.showDivDiffResult ? 'block' : 'none'}}>
+        <div id='div_section_mod'>
           <label>
-            General Stats:
-            <table
-              name="table_diff_stats"
-              id="table_diff_stats" >
-            <thead>
-            <tr>
-                <th>field</th>
-                <th id="header_stats_date1" name="header_stats_date1">{this.state.headerStatsDate1}</th>
-                <th id="header_stats_date2" name="header_stats_date2">{this.state.headerStatsDate2}</th>
-            </tr>
-            </thead>
-            <tbody id="table_diff_stats_body" name="table_diff_stats_body">
-                {this.state.rowsTableDiffStats.map((item, idx) => (
-                  <tr id="addr0" key={idx}>
-                    <td>{this.state.rowsTableDiffStats[idx].field}</td>
-                    <td>{this.state.rowsTableDiffStats[idx].date1}</td>
-                    <td>{this.state.rowsTableDiffStats[idx].date2}</td>
-                  </tr>
-                ))}
-            </tbody>
+            <h3>Select your Mod:</h3>
+            <select name="mod" id="mod" size={this.state.numMods} defaultValue="" onChange={this.handleChange}>
+              {this.state.optionMods}
+            </select>
+          </label><br/><br/>
+        </div>
+
+        <div id='div_section_select'>
+          <label>
+            <table name="table_section_select" id="table_section_select">
+              <tbody name="tbody_section_select" id="tbody_section_select">
+                <tr>
+                  <td style={{padding:"14px", background: this.state.backgroundDiffTab}} onClick={this.handleClickShowSectionDiff}><span>Compare Files</span></td>
+                  <td style={{padding:"14px", background: this.state.backgroundDownloadTab}} onClick={this.handleClickShowSectionDownload}><span>Download File</span></td>
+                  <td style={{padding:"14px", background: this.state.backgroundLoadTab}} onClick={this.handleClickShowSectionView}><span>View File</span></td>
+                </tr>
+              </tbody>
             </table>
           </label>
-          <br />
-          <label>
-            <div 
-              name="div_diff_results_text"
-              id="div_diff_results_text" 
-              style={{whiteSpace: 'pre-line'}}
-              >
-              {this.state.textDivDiffResults}
-            </div>
-          </label>
-          <label>
-            <table
-              name="table_diff"
-              id="table_diff" >
-            <thead>
-            <tr>
-                <th>gene</th>
-                <th>name</th>
-                <th id="header_diff_date1" name="header_diff_date1">{this.state.headerDiffDate1}</th>
-                <th id="header_diff_date2" name="header_diff_date2">{this.state.headerDiffDate2}</th>
-            </tr>
-            </thead>
-            <tbody id="table_diff_body" name="table_diff_body">
-                {this.state.rowsTableDiff.map((item, idx) => (
-                  <tr id="addr0" key={idx}>
-                    <td>{this.state.rowsTableDiff[idx].geneid}</td>
-                    <td>{this.state.rowsTableDiff[idx].genename}</td>
-                    <td>{this.state.rowsTableDiff[idx].desc1}</td>
-                    <td>{this.state.rowsTableDiff[idx].desc2}</td>
-                  </tr>
-                ))}
-            </tbody>
-            </table>
-          </label>
-          <br />
         </div>
+        
+        <div id='div_section_diff' style={{display: this.state.showDivDiffSection ? 'block' : 'none'}}>
+          <h3 id='anchor2Aresult'>Compare Files</h3>
+
+          <div id='div_diff_loading' style={{display: this.state.showDivDiffLoading ? 'block' : 'none', fontSize: 24}}>LOADING<img alt="image_LOADING" width="50" height="50" src="http://tazendra.caltech.edu/~azurebrd/cgi-bin/testing/amigo/loading.gif"/><br/><br/>
+          </div>
+          <div id='div_diff_result' style={{display: this.state.showDivDiffResult ? 'block' : 'none'}}>
+            <label>
+              General Stats:
+              <table
+                name="table_diff_stats"
+                id="table_diff_stats" >
+              <thead>
+              <tr>
+                  <th>field</th>
+                  <th id="header_stats_date1" name="header_stats_date1">{this.state.headerStatsDate1}</th>
+                  <th id="header_stats_date2" name="header_stats_date2">{this.state.headerStatsDate2}</th>
+              </tr>
+              </thead>
+              <tbody id="table_diff_stats_body" name="table_diff_stats_body">
+                  {this.state.rowsTableDiffStats.map((item, idx) => (
+                    <tr id="addr0" key={idx}>
+                      <td>{this.state.rowsTableDiffStats[idx].field}</td>
+                      <td>{this.state.rowsTableDiffStats[idx].date1}</td>
+                      <td>{this.state.rowsTableDiffStats[idx].date2}</td>
+                    </tr>
+                  ))}
+              </tbody>
+              </table>
+            </label>
+            <br />
+            <label>
+              <div 
+                name="div_diff_results_text"
+                id="div_diff_results_text" 
+                style={{whiteSpace: 'pre-line'}}
+                >
+                {this.state.textDivDiffResults}
+              </div>
+            </label>
+            <label>
+              <table
+                name="table_diff"
+                id="table_diff" >
+              <thead>
+              <tr>
+                  <th>gene</th>
+                  <th>name</th>
+                  <th id="header_diff_date1" name="header_diff_date1">{this.state.headerDiffDate1}</th>
+                  <th id="header_diff_date2" name="header_diff_date2">{this.state.headerDiffDate2}</th>
+              </tr>
+              </thead>
+              <tbody id="table_diff_body" name="table_diff_body">
+                  {this.state.rowsTableDiff.map((item, idx) => (
+                    <tr id="addr0" key={idx}>
+                      <td>{this.state.rowsTableDiff[idx].geneid}</td>
+                      <td>{this.state.rowsTableDiff[idx].genename}</td>
+                      <td>{this.state.rowsTableDiff[idx].desc1}</td>
+                      <td>{this.state.rowsTableDiff[idx].desc2}</td>
+                    </tr>
+                  ))}
+              </tbody>
+              </table>
+            </label>
+            <br />
+          </div>
 {/* for when results were at the top of the page and users might need to jump to the controls
         <div id='div_diff_navigation' style={{display: this.state.showDivDiffNavigation ? 'block' : 'none'}}>
           <a href="#mod" style={{textDecoration: 'none'}}><input type="button" value="Edit Query"/></a>
@@ -750,317 +814,320 @@ console.log('set ' + name + ' value ' + event.target.value);
         </div>
   */}
 
-        <table id='anchor2Acontrol'>
-        <tbody id="table_compare_body" name="table_compare_body">
-        <tr><td style={{verticalAlign: 'top'}}>
-        <label>
-          Select old file:<br/>
-          <select name="date1" id="date1" size={this.state.numDateOptions} onChange={this.handleChange}>
-            {this.state.dateOptions}
-          </select>
-        </label>
-        </td><td style={{verticalAlign: 'top'}}>
-        <label>
-          Select new file:<br/>
-          <select name="date2" id="date2" size={this.state.numDateOptions} onChange={this.handleChange}>
-            {this.state.dateOptions}
-          </select>
-        </label>
-        </td><td style={{verticalAlign: 'top'}}>
-        <label>
-          Select field to compare:<br/>
-          <select name="diffField" id="diffField" size={this.state.numDiffFields}  onChange={this.handleChange}>
-            {this.state.optionDiffFields}
-          </select>
-        </label>
-        </td></tr>
-        </tbody>
-        </table>
-        <input type="button" value="Compare files" onClick={this.handleSubmitCompare}/>
-        <input type="button" value="Start Over" onClick={() => this.reloadPage()} />
-        <br/><br/>
+          <table id='anchor2Acontrol'>
+          <tbody id="table_compare_body" name="table_compare_body">
+          <tr><td style={{verticalAlign: 'top'}}>
+          <label>
+            Select old file:<br/>
+            <select name="date1" id="date1" size={this.state.numDateOptions} onChange={this.handleChange}>
+              {this.state.dateOptions}
+            </select>
+          </label>
+          </td><td style={{verticalAlign: 'top'}}>
+          <label>
+            Select new file:<br/>
+            <select name="date2" id="date2" size={this.state.numDateOptions} onChange={this.handleChange}>
+              {this.state.dateOptions}
+            </select>
+          </label>
+          </td><td style={{verticalAlign: 'top'}}>
+          <label>
+            Select field to compare:<br/>
+            <select name="diffField" id="diffField" size={this.state.numDiffFields}  onChange={this.handleChange}>
+              {this.state.optionDiffFields}
+            </select>
+          </label>
+          </td></tr>
+          </tbody>
+          </table>
+          <input type="button" value="Compare files" onClick={this.handleSubmitCompare}/>
+          <input type="button" value="Start Over" onClick={() => this.reloadPage()} />
+          <br/><br/>
 
-        <label>
-          Optional gene name filter:<br/>
-          <textarea
-            name="diffGeneNameFilter"
-            id="diffGeneNameFilter"
-            type="text"
-            size="100"
-            value={this.state.diffGeneNameFilter}
-            onChange={this.handleChange} /><br/>
-          <input
-            name="checkboxDiffGeneNameFilter"
-            type="checkbox"
-            checked={this.state.checkboxDiffGeneNameFilter}
-            onChange={this.handleInputChange} />
-          Case sensitive<br/>
-          <input
-            name="checkboxDiffGeneNameSubstring"
-            type="checkbox"
-            checked={this.state.checkboxDiffGeneNameSubstring}
-            onChange={this.handleInputChange} />
-          Substring Match<br/>
-        </label>
-        <br />
-        <label>
-          Optional phrase filter:<br/>
-          <textarea
-            name="diffKeywordFilter"
-            id="diffKeywordFilter"
-            type="text"
-            size="100"
-            value={this.state.diffKeywordFilter}
-            onChange={this.handleChange} /><br/>
-          <input
-            name="checkboxDiffKeywordFilter"
-            type="checkbox"
-            checked={this.state.checkboxDiffKeywordFilter}
-            onChange={this.handleInputChange} />
-          Case sensitive<br/>
-        </label>
-        <br /><br/>
+          <label>
+            Optional gene name filter:<br/>
+            <textarea
+              name="diffGeneNameFilter"
+              id="diffGeneNameFilter"
+              type="text"
+              size="100"
+              value={this.state.diffGeneNameFilter}
+              onChange={this.handleChange} /><br/>
+            <input
+              name="checkboxDiffGeneNameFilter"
+              type="checkbox"
+              checked={this.state.checkboxDiffGeneNameFilter}
+              onChange={this.handleInputChange} />
+            Case sensitive<br/>
+            <input
+              name="checkboxDiffGeneNameSubstring"
+              type="checkbox"
+              checked={this.state.checkboxDiffGeneNameSubstring}
+              onChange={this.handleInputChange} />
+            Substring Match<br/>
+          </label>
+          <br />
+          <label>
+            Optional phrase filter:<br/>
+            <textarea
+              name="diffKeywordFilter"
+              id="diffKeywordFilter"
+              type="text"
+              size="100"
+              value={this.state.diffKeywordFilter}
+              onChange={this.handleChange} /><br/>
+            <input
+              name="checkboxDiffKeywordFilter"
+              type="checkbox"
+              checked={this.state.checkboxDiffKeywordFilter}
+              onChange={this.handleInputChange} />
+            Case sensitive<br/>
+          </label>
+          <br /><br/>
+        </div>
 
-        <hr />
-        <h3>2.b. Download a file</h3>
-        <label>
-          Select file to download:<br/>
-          <select name="dateDownload" id="dateDownload" size={this.state.numDateOptions} onChange={this.handleChange}>
-            {this.state.dateOptions}
-          </select>
-        </label>
-        <br />
+        <div id='div_section_download' style={{display: this.state.showDivDownloadSection ? 'block' : 'none'}}>
+          <h3>Download a file</h3>
+          <label id='anchor2Bcontrol'>
+            Select file to download:<br/>
+            <select name="dateDownload" id="dateDownload" size={this.state.numDateOptions} onChange={this.handleChange}>
+              {this.state.dateOptions}
+            </select>
+          </label>
+          <br />
 {/* 
 Doesn't work cross origin (across domains)
         <a id="hrefDownload" href="http://www.google.com" download="file.txt" style={{textDecoration: 'none'}}><input type="button" value="Download File"/></a>
 */}
-        <input type="button" value="Open JSON in new tab" onClick={this.handleSubmitOpenTab}/> After it loads, you can save it.<br/>
-        <input type="button" value="Generate JSON link" onClick={this.handleSubmitGenerateLink}/> You can right-click and save it, instead of waiting for it to load.<br/><br/>
-        <label>
-          <div 
-            style={{display: this.state.showDownloadLink ? 'block' : 'none'}}
-            name="div_link_to_json"
-            id="div_link_to_json" >
-            <a target='_blank' href={this.state.downloadLinkUrl} style={{textDecoration: 'none'}}>{this.state.downloadLinkText}</a>
+          <input type="button" value="Open JSON in new tab" onClick={this.handleSubmitOpenTab}/> After it loads, you can save it.<br/>
+          <input type="button" value="Generate JSON link" onClick={this.handleSubmitGenerateLink}/> You can right-click and save it, instead of waiting for it to load.<br/><br/>
+          <label>
+            <div 
+              style={{display: this.state.showDownloadLink ? 'block' : 'none'}}
+              name="div_link_to_json"
+              id="div_link_to_json" >
+              <a target='_blank' href={this.state.downloadLinkUrl} style={{textDecoration: 'none'}}>{this.state.downloadLinkText}</a>
+            </div>
+          </label>
+        </div>
+
+
+        <div id='div_section_load' style={{display: this.state.showDivLoadSection ? 'block' : 'none'}}>
+          <h3 id='anchor2Cresult'>View a file</h3>
+   
+          <div id='div_load_loading' style={{display: this.state.showDivLoadLoading ? 'block' : 'none', fontSize: 24}}>LOADING<img alt="image_LOADING" width="50" height="50" src="http://tazendra.caltech.edu/~azurebrd/cgi-bin/testing/amigo/loading.gif"/><br/><br/>
           </div>
-        </label>
-
-        <hr />
-
-        <h3 id='anchor2Cresult'>2.c. View a file</h3>
-
-        <div id='div_load_loading' style={{display: this.state.showDivLoadLoading ? 'block' : 'none', fontSize: 24}}>LOADING<img alt="image_LOADING" width="50" height="50" src="http://tazendra.caltech.edu/~azurebrd/cgi-bin/testing/amigo/loading.gif"/><br/><br/>
-        </div>
-        <div id='div_load_result' style={{display: this.state.showDivLoadResult ? 'block' : 'none'}}>
+          <div id='div_load_result' style={{display: this.state.showDivLoadResult ? 'block' : 'none'}}>
+            <label>
+              General Stats:
+              <table
+                name="table_load_stats"
+                id="table_load_stats" >
+              <thead>
+              <tr>
+                  <th>field</th>
+                  <th>value</th>
+              </tr>
+              </thead>
+              <tbody id="table_load_stats_body" name="table_load_stats_body">
+                  {this.state.rowsTableLoadStats.map((item, idx) => (
+                    <tr id="addr0" key={idx}>
+                      <td>{this.state.rowsTableLoadStats[idx].field}</td>
+                      <td>{this.state.rowsTableLoadStats[idx].value}</td>
+                    </tr>
+                  ))}
+              </tbody>
+              </table>
+            </label>
+            <br />
           <label>
-            General Stats:
-            <table
-              name="table_load_stats"
-              id="table_load_stats" >
-            <thead>
-            <tr>
-                <th>field</th>
-                <th>value</th>
-            </tr>
-            </thead>
-            <tbody id="table_load_stats_body" name="table_load_stats_body">
-                {this.state.rowsTableLoadStats.map((item, idx) => (
-                  <tr id="addr0" key={idx}>
-                    <td>{this.state.rowsTableLoadStats[idx].field}</td>
-                    <td>{this.state.rowsTableLoadStats[idx].value}</td>
-                  </tr>
-                ))}
-            </tbody>
-            </table>
+            Field counts: <br />
+          </label>
+          {this.state.diffFieldsArray.map(function(item){
+//             let name = 'matchcount_' + item;
+            let label_key = 'label_key_matchcount_' + item;
+            return (
+              <label key={label_key} style={{display: this.state.showLabelFieldsMatchCount[item] ? 'block' : 'none'}}>
+                {item} count: {this.state.loadFieldsMatchCount[item]}<br/>
+              </label>
+            )}, this)}
+            <br />
+           
+            <label>
+              File Load Result:<br/>
+              <input type="button" value="Previous Page" onClick={this.handleSubmitLoadPrevPage}/>
+              &nbsp;&nbsp;Page {this.state.pageNumber}&nbsp;&nbsp;
+              <input type="button" value="Next Page" onClick={this.handleSubmitLoadNextPage}/><br/>
+            </label>
+            <label>
+              <table
+                name="table_load"
+                id="table_load" >
+              <thead>
+              <tr>
+                  <th id="header_geneid" name="header_geneid">Gene ID</th>
+                  <th id="header_genename" name="header_genename">Gene Name</th>
+                  <th id="header_field" name="header_field">Field</th>
+                  <th id="header_text" name="header_text">Text</th>
+              </tr>
+              </thead>
+              <tbody id="table_load_body" name="table_load_body">
+                  {this.state.rowsTableLoad.map((item, idx) => (
+                    <tr id="addr0" key={idx}>
+                      <td>{this.state.rowsTableLoad[idx].gene_id}</td>
+                      <td>{this.state.rowsTableLoad[idx].gene_name}</td>
+                      <td>{this.state.rowsTableLoad[idx].field}</td>
+                      <td>{this.state.rowsTableLoad[idx].text}</td>
+                    </tr>
+                  ))}
+              </tbody>
+              </table><br/>
+            </label>
+            <label>
+              <input type="button" value="Previous Page" onClick={this.handleSubmitLoadPrevPage}/>
+              &nbsp;&nbsp;Page {this.state.pageNumber}&nbsp;&nbsp;
+              <input type="button" value="Next Page" onClick={this.handleSubmitLoadNextPage}/><br/>
+              <br/>
+            </label>
+          </div>
+   
+          <label id='anchor2Ccontrol'>
+            Select file to view:<br/>
+            <select name="dateLoad" id="dateLoad" size={this.state.numDateOptions} onChange={this.handleChange}>
+              {this.state.dateOptions}
+            </select>
           </label>
           <br />
-        <label>
-          Field counts: <br />
-        </label>
-        {this.state.diffFieldsArray.map(function(item){
-          let name = 'matchcount_' + item;
-          let label_key = 'label_key_matchcount_' + item;
-          return (
-            <label key={label_key} style={{display: this.state.showLabelFieldsMatchCount[item] ? 'block' : 'none'}}>
-              {item} count: {this.state.loadFieldsMatchCount[item]}<br/>
-            </label>
-          )}, this)}
+          <input type="button" value="Load JSON" onClick={this.handleSubmitLoad}/><br/>
           <br />
-         
           <label>
-            File Load Result:<br/>
-            <input type="button" value="Previous Page" onClick={this.handleSubmitLoadPrevPage}/>
-            &nbsp;&nbsp;Page {this.state.pageNumber}&nbsp;&nbsp;
-            <input type="button" value="Next Page" onClick={this.handleSubmitLoadNextPage}/><br/>
+            Which fields to display : <br />
+          </label>
+          {this.state.diffFieldsArray.map(function(item){
+            let name = 'checkbox_' + item;
+            let label_key = 'label_key_' + item;
+            return (
+              <label key={label_key}>
+                <input
+                  name={name}
+                  type="checkbox"
+                  checked={this.state.checkboxDiffFields[item]}
+                  onChange={this.handleInputChangeCheckboxDiffFields} 
+                />{this.state.diffFieldsHash[item]}<br/>
+              </label>
+            )}, this)}
+          <br />
+          <label>
+            Which type of results to show : <br />
           </label>
           <label>
-            <table
-              name="table_load"
-              id="table_load" >
-            <thead>
-            <tr>
-                <th id="header_geneid" name="header_geneid">Gene ID</th>
-                <th id="header_genename" name="header_genename">Gene Name</th>
-                <th id="header_field" name="header_field">Field</th>
-                <th id="header_text" name="header_text">Text</th>
-            </tr>
-            </thead>
-            <tbody id="table_load_body" name="table_load_body">
-                {this.state.rowsTableLoad.map((item, idx) => (
-                  <tr id="addr0" key={idx}>
-                    <td>{this.state.rowsTableLoad[idx].gene_id}</td>
-                    <td>{this.state.rowsTableLoad[idx].gene_name}</td>
-                    <td>{this.state.rowsTableLoad[idx].field}</td>
-                    <td>{this.state.rowsTableLoad[idx].text}</td>
-                  </tr>
-                ))}
-            </tbody>
-            </table><br/>
+            <input
+              name="checkboxHasData"
+              type="checkbox"
+              checked={this.state.checkboxHasData}
+              onChange={this.handleInputChange} />
+            Has Data<br/>
           </label>
           <label>
-            <input type="button" value="Previous Page" onClick={this.handleSubmitLoadPrevPage}/>
-            &nbsp;&nbsp;Page {this.state.pageNumber}&nbsp;&nbsp;
-            <input type="button" value="Next Page" onClick={this.handleSubmitLoadNextPage}/><br/>
-            <br/>
+            <input
+              name="checkboxHasNoData"
+              type="checkbox"
+              checked={this.state.checkboxHasNoData}
+              onChange={this.handleInputChange} />
+            Does not have Data<br/>
           </label>
+          <br />
+          <label>
+            Entries per page :
+            <input
+              name="entriesPerPage"
+              id="entriesPerPage"
+              type="number"
+              size="5"
+              value={this.state.entriesPerPage}
+              onChange={this.handleChange} />
+          </label>
+          <br />
+          <label>
+            Page number :
+            <input
+              name="pageNumber"
+              id="pageNumber"
+              type="number"
+              size="5"
+              value={this.state.pageNumber}
+              onChange={this.handleChange} />
+          </label>
+          <br />
+          <br />
+          <label>
+            Optional gene name filter:<br/>
+            <textarea
+              name="loadGeneNameFilter"
+              id="loadGeneNameFilter"
+              type="text"
+              size="100"
+              value={this.state.loadGeneNameFilter}
+              onChange={this.handleChange} /><br/>
+            <input
+              name="checkboxLoadGeneNameFilter"
+              type="checkbox"
+              checked={this.state.checkboxLoadGeneNameFilter}
+              onChange={this.handleInputChange} />
+            Case sensitive<br/>
+            <input
+              name="checkboxLoadGeneNameSubstring"
+              type="checkbox"
+              checked={this.state.checkboxLoadGeneNameSubstring}
+              onChange={this.handleInputChange} />
+            Substring Match<br/>
+          </label>
+          <br />
+          <label>
+            Optional phrase filter:<br/>
+            <textarea
+              name="loadKeywordFilter"
+              id="loadKeywordFilter"
+              type="text"
+              size="100"
+              value={this.state.loadKeywordFilter}
+              onChange={this.handleChange} /><br/>
+            <input
+              name="checkboxLoadKeywordFilter"
+              type="checkbox"
+              checked={this.state.checkboxLoadKeywordFilter}
+              onChange={this.handleInputChange} />
+            Case sensitive<br/>
+          </label>
+          <br />
+          <label>
+            Optional ontology ID filter:<br/>
+            <textarea
+              name="loadOntologyFilter"
+              id="loadOntologyFilter"
+              type="text"
+              size="100"
+              value={this.state.loadOntologyFilter}
+              onChange={this.handleChange} /><br/>
+          </label>
+          <br />
+          <label>
+            Count of set_final_experimental_go_ids 
+            <select name="loadComparisonGoids" id="loadComparisonGoids" size="1" value={this.state.loadComparisonGoids} onChange={this.handleChange}>
+              <option value=">=">&gt;=</option>
+              <option value="<=">&lt;=</option>
+              <option value="==">==</option>
+            </select>
+            <input
+              name="loadGoidsCount"
+              id="loadGoidsCount"
+              type="number"
+              size="5"
+              value={this.state.loadGoidsCount}
+              onChange={this.handleChange} />
+          </label>
+          <br />
         </div>
-
-        <label id='anchor2Ccontrol'>
-          Select file to view:<br/>
-          <select name="dateLoad" id="dateLoad" size={this.state.numDateOptions} onChange={this.handleChange}>
-            {this.state.dateOptions}
-          </select>
-        </label>
-        <br />
-        <input type="button" value="Load JSON" onClick={this.handleSubmitLoad}/><br/>
-        <br />
-        <label>
-          Which fields to display : <br />
-        </label>
-        {this.state.diffFieldsArray.map(function(item){
-          let name = 'checkbox_' + item;
-          let label_key = 'label_key_' + item;
-          return (
-            <label key={label_key}>
-              <input
-                name={name}
-                type="checkbox"
-                checked={this.state.checkboxDiffFields[item]}
-                onChange={this.handleInputChangeCheckboxDiffFields} 
-              />{this.state.diffFieldsHash[item]}<br/>
-            </label>
-          )}, this)}
-        <br />
-        <label>
-          Which type of results to show : <br />
-        </label>
-        <label>
-          <input
-            name="checkboxHasData"
-            type="checkbox"
-            checked={this.state.checkboxHasData}
-            onChange={this.handleInputChange} />
-          Has Data<br/>
-        </label>
-        <label>
-          <input
-            name="checkboxHasNoData"
-            type="checkbox"
-            checked={this.state.checkboxHasNoData}
-            onChange={this.handleInputChange} />
-          Does not have Data<br/>
-        </label>
-        <br />
-        <label>
-          Entries per page :
-          <input
-            name="entriesPerPage"
-            id="entriesPerPage"
-            type="number"
-            size="5"
-            value={this.state.entriesPerPage}
-            onChange={this.handleChange} />
-        </label>
-        <br />
-        <label>
-          Page number :
-          <input
-            name="pageNumber"
-            id="pageNumber"
-            type="number"
-            size="5"
-            value={this.state.pageNumber}
-            onChange={this.handleChange} />
-        </label>
-        <br />
-        <br />
-        <label>
-          Optional gene name filter:<br/>
-          <textarea
-            name="loadGeneNameFilter"
-            id="loadGeneNameFilter"
-            type="text"
-            size="100"
-            value={this.state.loadGeneNameFilter}
-            onChange={this.handleChange} /><br/>
-          <input
-            name="checkboxLoadGeneNameFilter"
-            type="checkbox"
-            checked={this.state.checkboxLoadGeneNameFilter}
-            onChange={this.handleInputChange} />
-          Case sensitive<br/>
-          <input
-            name="checkboxLoadGeneNameSubstring"
-            type="checkbox"
-            checked={this.state.checkboxLoadGeneNameSubstring}
-            onChange={this.handleInputChange} />
-          Substring Match<br/>
-        </label>
-        <br />
-        <label>
-          Optional phrase filter:<br/>
-          <textarea
-            name="loadKeywordFilter"
-            id="loadKeywordFilter"
-            type="text"
-            size="100"
-            value={this.state.loadKeywordFilter}
-            onChange={this.handleChange} /><br/>
-          <input
-            name="checkboxLoadKeywordFilter"
-            type="checkbox"
-            checked={this.state.checkboxLoadKeywordFilter}
-            onChange={this.handleInputChange} />
-          Case sensitive<br/>
-        </label>
-        <br />
-        <label>
-          Optional ontology ID filter:<br/>
-          <textarea
-            name="loadOntologyFilter"
-            id="loadOntologyFilter"
-            type="text"
-            size="100"
-            value={this.state.loadOntologyFilter}
-            onChange={this.handleChange} /><br/>
-        </label>
-        <br />
-        <label>
-          Count of set_final_experimental_go_ids 
-          <select name="loadComparisonGoids" id="loadComparisonGoids" size="1" value={this.state.loadComparisonGoids} onChange={this.handleChange}>
-            <option value=">=">&gt;=</option>
-            <option value="<=">&lt;=</option>
-            <option value="==">==</option>
-          </select>
-          <input
-            name="loadGoidsCount"
-            id="loadGoidsCount"
-            type="number"
-            size="5"
-            value={this.state.loadGoidsCount}
-            onChange={this.handleChange} />
-        </label>
-        <br />
 
       </form>
     );
