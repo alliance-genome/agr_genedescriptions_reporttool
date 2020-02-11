@@ -7,7 +7,7 @@ function generateJsonUrl(version, date, mod, baseUrl) {
 }
 
 function generateFmsJsonUrl(url, mod) {
-  let baseUrl = 'http://download.alliancegenome.org/';
+  let baseUrl = 'https://download.alliancegenome.org/';
 //   let sampleMod = 'JSON_WB';
 //   let chosenMod = 'JSON_' + mod;
   let correctUrl = url.replace(/WB/g, mod);
@@ -217,7 +217,7 @@ class ReportTool extends React.Component {
 // curl -X GET "https://fms.alliancegenome.org/api/releaseversion/all" -H "accept: application/json"
 // curl -X GET "https://fms.alliancegenome.org/api/datafile/by/2.3.0/GENE-DESCRIPTION-JSON/WB?latest=true"  -H "accept: application/json" | json_pp
 //         "s3Path" : "2.3.0/GENE-DESCRIPTION-TEST-JSON/WB/GENE-DESCRIPTION-TEST-JSON_WB_0.json"
-//     http://download.alliancegenome.org/2.3.0/GENE-DESCRIPTION-TEST-JSON/WB/GENE-DESCRIPTION-TEST-JSON_WB_0.json
+//     https://download.alliancegenome.org/2.3.0/GENE-DESCRIPTION-TEST-JSON/WB/GENE-DESCRIPTION-TEST-JSON_WB_0.json
 
 
 
