@@ -69,7 +69,8 @@ class ReportTool extends React.Component {
       showDivDiffSection: false,
 //       showDivDiffSection: true,
       showDivDownloadSection: false,
-      showDivLoadSection: false,
+//       showDivLoadSection: false,
+      showDivLoadSection: true,
       showDivDiffLoading: false,
       showDivLoadLoading: false,
       showDivLoadResult: false,
@@ -82,6 +83,7 @@ class ReportTool extends React.Component {
       headerDiffDate2: 'date2',
       baseUrl: '',
       mod: undefined,
+//       mod: 'WB',
       diffKeywordFilter: '',
       diffGeneNameFilter: '',
       loadOntologyFilter: '',
@@ -129,6 +131,7 @@ class ReportTool extends React.Component {
     this.handleChange = this.handleChange.bind(this);
     this.handleChangePage = this.handleChangePage.bind(this);
     this.handleChangeReleaseLatest = this.handleChangeReleaseLatest.bind(this);
+    this.handleChangeMod = this.handleChangeMod.bind(this);
     this.handleSubmitCompare = this.handleSubmitCompare.bind(this);
     this.handleSubmitOpenTab = this.handleSubmitOpenTab.bind(this);
     this.handleSubmitGenerateLink = this.handleSubmitGenerateLink.bind(this);
@@ -151,8 +154,11 @@ class ReportTool extends React.Component {
     this.setState({loadTimeMessage: this.state.loadTimeMessage + 'Start loading at ' + dateObject + '.\n'});
     console.log( timeStartReleasesFetch );
 
-    this.getS3PathsFromFms('live', this.state.releaseLatest);
-    this.getS3PathsFromFms('test', this.state.releaseLatest);
+// if we had a default MOD, this would populate the files to select with it
+    if (this.state.mod !== undefined) { 
+      this.getS3PathsFromFms('live', this.state.releaseLatest, this.state.mod);
+      this.getS3PathsFromFms('test', this.state.releaseLatest, this.state.mod); }
+
 // //       dateVersionRelease: {},
 // //       numFmsUrlsQueried: 0,
 // //       numFmsUrlsToQuery: 2,
@@ -297,7 +303,7 @@ console.log('urlTemplate: ' + urlTemplate);
    })
  } // componentDidMount()
 
-  getS3PathsFromFms(testOrLive, releaseLatest) {
+  getS3PathsFromFms(testOrLive, releaseLatest, mod) {
     // for some reason handleChangeReleaseLatest(event) does setState, but this state doesn't update to the new value, so have to pass value to function
 //       dateVersionRelease: {},
 //       numFmsUrlsQueried: 0,
@@ -305,13 +311,15 @@ console.log('urlTemplate: ' + urlTemplate);
 //     let urlRelease = 'https://fms.alliancegenome.org/api/datafile/by/GENE-DESCRIPTION-JSON/WB';
 //     let urlRelease = 'https://fms.alliancegenome.org/api/datafile/by/GENE-DESCRIPTION-JSON/WB?latest=false';
 //     let urlRelease = 'https://fms.alliancegenome.org/api/datafile/by/GENE-DESCRIPTION-JSON/WB?latest=' + this.state.releaseLatest;
-    let urlRelease = 'https://fms.alliancegenome.org/api/datafile/by/GENE-DESCRIPTION-JSON/WB?latest=' + releaseLatest;
+//     let urlRelease = 'https://fms.alliancegenome.org/api/datafile/by/GENE-DESCRIPTION-JSON/WB?latest=' + releaseLatest;
+    let urlRelease = 'https://fms.alliancegenome.org/api/datafile/by/GENE-DESCRIPTION-JSON/' + mod + '?latest=' + releaseLatest;
     let release = 'release';
     if (testOrLive === 'test') {
 //       urlRelease = 'https://fms.alliancegenome.org/api/datafile/by/GENE-DESCRIPTION-TEST-JSON/WB';
 //       urlRelease = 'https://fms.alliancegenome.org/api/datafile/by/GENE-DESCRIPTION-TEST-JSON/WB?latest=false';
 //       urlRelease = 'https://fms.alliancegenome.org/api/datafile/by/GENE-DESCRIPTION-TEST-JSON/WB?latest=' + this.state.releaseLatest;
-      urlRelease = 'https://fms.alliancegenome.org/api/datafile/by/GENE-DESCRIPTION-TEST-JSON/WB?latest=' + releaseLatest;
+//       urlRelease = 'https://fms.alliancegenome.org/api/datafile/by/GENE-DESCRIPTION-TEST-JSON/WB?latest=' + releaseLatest;
+      urlRelease = 'https://fms.alliancegenome.org/api/datafile/by/GENE-DESCRIPTION-TEST-JSON/' + mod + '?latest=' + releaseLatest;
       release = 'pre-release'; }
     fetch(urlRelease)
       .then(responseRelease => responseRelease.json())
@@ -323,6 +331,11 @@ console.log('urlTemplate: ' + urlTemplate);
           let time = responseRelease[i].uploadDate;
           let date = generateDateString(time);
           let version = responseRelease[i].releaseVersions[0].releaseVersion;
+          for (let j in responseRelease[i].releaseVersions) { 	// could have multiple versions for a file, always use the oldest for Ranjana
+            if (responseRelease[i].releaseVersions[j].releaseVersion < version) {
+              version = responseRelease[i].releaseVersions[j].releaseVersion;
+            }
+          }
 console.log('s3Path ' + s3Path + ' date ' + date + ' version ' + version);
 //           let value  = date + '|' + version + '/' + release;
           let value  = s3Path;
@@ -416,17 +429,29 @@ console.log('set ' + name + ' value ' + event.target.value);
     console.log('page ' + this.state.pageNumber + ' entriesPerPage ' + this.state.entriesPerPage);
   }
 
-  handleChangeReleaseLatest(event) {
+  handleChangeMod(event) {
     this.handleChange(event);
-// don't know why this state value hasn't updated to the setState value, so need to pass event.target.value to getS3PathsFromFms
-console.log('have failed to set releaseLatest ' + this.state.releaseLatest);	
     this.setState({ numFmsUrlsQueried: 0 });
     this.setState({ dateVersionRelease: {} });
     this.setState({ dateOptions: [] });
     this.setState({ numDateOptions: 0 });
     this.setState({loadTimeMessage: ''});
-    this.getS3PathsFromFms('live', event.target.value);
-    this.getS3PathsFromFms('test', event.target.value);
+    this.getS3PathsFromFms('live', this.state.releaseLatest, event.target.value);
+    this.getS3PathsFromFms('test', this.state.releaseLatest, event.target.value);
+    console.log('update mod ' + this.state.mod);
+  }
+
+  handleChangeReleaseLatest(event) {
+    this.handleChange(event);
+// don't know why this state value hasn't updated to the setState value, so need to pass event.target.value to getS3PathsFromFms
+// console.log('have failed to set releaseLatest ' + this.state.releaseLatest);	
+    this.setState({ numFmsUrlsQueried: 0 });
+    this.setState({ dateVersionRelease: {} });
+    this.setState({ dateOptions: [] });
+    this.setState({ numDateOptions: 0 });
+    this.setState({loadTimeMessage: ''});
+    this.getS3PathsFromFms('live', event.target.value, this.state.mod);
+    this.getS3PathsFromFms('test', event.target.value, this.state.mod);
     console.log('update release latest ' + this.state.releaseLatest);
   }
 
@@ -982,7 +1007,7 @@ console.log('have failed to set releaseLatest ' + this.state.releaseLatest);
         <div id='div_section_mod'>
           <label>
             <h3>Select your Mod:</h3>
-            <select name="mod" id="mod" size={this.state.numMods} defaultValue="" onChange={this.handleChange}>
+            <select name="mod" id="mod" size={this.state.numMods} defaultValue="" onChange={this.handleChangeMod}>
               {this.state.optionMods}
             </select>
           </label><br/>
