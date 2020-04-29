@@ -46,7 +46,7 @@ class ReportTool extends React.Component {
       downloadLinkUrl: 'http://tazendra.caltech.edu/~azurebrd/cgi-bin/forms/agr/data/',
 
       releaseVersions: {},
-      releaseLatest: 'false',
+      releaseLatest: 'true',
       numReleaseVersions: 0, 
       numVersionsFetched: 0, 
       timeStartReleasesFetch: 0,
@@ -312,14 +312,16 @@ console.log('urlTemplate: ' + urlTemplate);
 //     let urlRelease = 'https://fms.alliancegenome.org/api/datafile/by/GENE-DESCRIPTION-JSON/WB?latest=false';
 //     let urlRelease = 'https://fms.alliancegenome.org/api/datafile/by/GENE-DESCRIPTION-JSON/WB?latest=' + this.state.releaseLatest;
 //     let urlRelease = 'https://fms.alliancegenome.org/api/datafile/by/GENE-DESCRIPTION-JSON/WB?latest=' + releaseLatest;
-    let urlRelease = 'https://fms.alliancegenome.org/api/datafile/by/GENE-DESCRIPTION-JSON/' + mod + '?latest=' + releaseLatest;
+//     let urlRelease = 'https://fms.alliancegenome.org/api/datafile/by/GENE-DESCRIPTION-JSON/' + mod + '?latest=' + releaseLatest;	// if fms worked to show the latest for a given version-release instead of latest overall
+    let urlRelease = 'https://fms.alliancegenome.org/api/datafile/by/GENE-DESCRIPTION-JSON/' + mod + '?latest=false';
     let release = 'release/stage';
     if (testOrLive === 'test') {
 //       urlRelease = 'https://fms.alliancegenome.org/api/datafile/by/GENE-DESCRIPTION-TEST-JSON/WB';
 //       urlRelease = 'https://fms.alliancegenome.org/api/datafile/by/GENE-DESCRIPTION-TEST-JSON/WB?latest=false';
 //       urlRelease = 'https://fms.alliancegenome.org/api/datafile/by/GENE-DESCRIPTION-TEST-JSON/WB?latest=' + this.state.releaseLatest;
 //       urlRelease = 'https://fms.alliancegenome.org/api/datafile/by/GENE-DESCRIPTION-TEST-JSON/WB?latest=' + releaseLatest;
-      urlRelease = 'https://fms.alliancegenome.org/api/datafile/by/GENE-DESCRIPTION-TEST-JSON/' + mod + '?latest=' + releaseLatest;
+//       urlRelease = 'https://fms.alliancegenome.org/api/datafile/by/GENE-DESCRIPTION-TEST-JSON/' + mod + '?latest=' + releaseLatest;	// if fms worked to show the latest for a given version-release instead of latest overall
+      urlRelease = 'https://fms.alliancegenome.org/api/datafile/by/GENE-DESCRIPTION-TEST-JSON/' + mod + '?latest=false';
       release = 'pre-release/build'; }
     fetch(urlRelease)
       .then(responseRelease => responseRelease.json())
@@ -346,13 +348,21 @@ console.log('s3Path ' + s3Path + ' date ' + date + ' version ' + version);
         this.setState({ dateVersionRelease: dateVersionRelease });
         this.setState({ numFmsUrlsQueried: this.state.numFmsUrlsQueried + 1 });
         if (this.state.numFmsUrlsQueried >= this.state.numFmsUrlsToQuery) {
-          Object.keys(dateVersionRelease).sort().forEach(function(label) {
+          let versionReleaseHash = {};
+          Object.keys(dateVersionRelease).sort().reverse().forEach(function(label) {
+            // sort labels and process in reverse, to get most recent first
             let value = dateVersionRelease[label];
-//             console.log('inside ' + label + ' ' + dateVersionRelease[label]);
+            let matches  = label.match(/^(.*?) - (.*?) - /);
+            let version  = matches[1];
+            let release  = matches[2];
+            let versionRelease = version + ' - ' + release;
+            if ( (releaseLatest === 'true') && (versionRelease in versionReleaseHash) ) { return; }
+	      // if only want latest release and version-release has already been added, skip it
+            versionReleaseHash[versionRelease] = versionRelease;	// add versionRelease to dict of already added
             let option = renderOption(label, value);
             let dateOptions = this.state.dateOptions;
-            dateOptions.unshift(option);
-            dateOptions = dateOptions.sort();
+            dateOptions.push(option);					// add older version releases later in the list
+//             dateOptions = dateOptions.sort();			// remove, this doesn't do anything
             let numDateOptions = dateOptions.length;
             this.setState({ dateOptions: dateOptions });
             this.setState({ numDateOptions: numDateOptions });
@@ -1019,7 +1029,7 @@ console.log('set ' + name + ' value ' + event.target.value);
               onChange={this.handleChangeReleaseLatest}
               checked={this.state.releaseLatest === "true"}
             />
-            Latest per release isn't working, this is completely latest for release vs. pre-release
+            Latest file for a given version and release type
           </label><br/>
           <label>
             <input
