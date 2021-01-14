@@ -1,10 +1,16 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
+import pako from 'pako';
+import axios from 'axios';
 
-function generateJsonUrl(version, date, mod, baseUrl) {
-  return(baseUrl + version + '/' + date + '/' + date + '_' + mod + '.json');
-}
+// for github, need to 
+// npm install axios
+// npm install pako
+
+
+// UNDO FOR OLD WAY
+// function generateJsonUrl(version, date, mod, baseUrl) { return(baseUrl + version + '/' + date + '/' + date + '_' + mod + '.json'); }
 
 function generateFmsJsonUrl(url, mod) {
   let baseUrl = 'https://download.alliancegenome.org/';
@@ -39,6 +45,13 @@ function renderOption(label, value) {
 class ReportTool extends React.Component {
   constructor(props) {
     super(props);
+
+    function getHtmlVar() { return new URLSearchParams(window.location.search); }
+    let queryMod = getHtmlVar().get('mod');
+    if (queryMod != null) {
+       console.log('constructor queryMod ' + queryMod);
+//        document.getElementById("mod").value = queryMod;	// html element doesn't exist yet
+    } else { queryMod = undefined; }
 
     this.state = {
       showDownloadLink: false,
@@ -82,7 +95,8 @@ class ReportTool extends React.Component {
       headerDiffDate1: 'date1',
       headerDiffDate2: 'date2',
       baseUrl: '',
-      mod: undefined,
+      mod: queryMod,
+//       mod: undefined,
 //       mod: 'WB',
       diffKeywordFilter: '',
       diffGeneNameFilter: '',
@@ -132,6 +146,7 @@ class ReportTool extends React.Component {
     this.handleChangePage = this.handleChangePage.bind(this);
     this.handleChangeReleaseLatest = this.handleChangeReleaseLatest.bind(this);
     this.handleChangeMod = this.handleChangeMod.bind(this);
+    this.handleChangeModEvent = this.handleChangeModEvent.bind(this);
     this.handleSubmitCompare = this.handleSubmitCompare.bind(this);
     this.handleSubmitOpenTab = this.handleSubmitOpenTab.bind(this);
     this.handleSubmitGenerateLink = this.handleSubmitGenerateLink.bind(this);
@@ -143,8 +158,32 @@ class ReportTool extends React.Component {
 
   componentDidMount() {
     let urlRoot = process.env.REACT_APP_URLROOT;
+
+    console.log('componentDidMount this.state.mod ' + this.state.mod);
+
 //    console.log("urlRoot " + urlRoot);	// not getting this value when running in docker
     if (urlRoot === undefined) { urlRoot = 'https://reports.alliancegenome.org/'; }
+
+    function getHtmlVar() { return new URLSearchParams(window.location.search); }
+    let queryMod = getHtmlVar().get('mod');
+    if (queryMod != null) {
+//        document.getElementById("mod").value = queryMod;	// updates, but render has already happenned, so doesn't show on browser
+//        document.getElementById('mod').value = 'WB';
+//        document.getElementById('mod').getElementsByTagName('option')[0].selected = 'selected';	// doesn't work
+
+//        document.getElementById('test').value = queryMod;	// can set some input, if the element is in the render
+//        alert('alert');
+
+//        console.log('numFmsUrlsToQuery ' + this.state.numFmsUrlsToQuery);
+//        console.log('queryMod ' + queryMod);
+//        console.log('this.state.mod ' + this.state.mod);
+    }
+
+
+//     this.getS3PathsFromFms('live', this.state.releaseLatest, event.target.value);
+//     this.getS3PathsFromFms('test', this.state.releaseLatest, event.target.value);
+//     console.log('handleChangeMod update mod ' + this.state.mod);
+
 
 // NEW SECTION
     let dateObject = new Date();
@@ -229,7 +268,7 @@ class ReportTool extends React.Component {
 
    let urlTemplate = urlRoot;
    if (urlRoot.match(/textpresso/)) { urlTemplate = urlRoot + 'index.xml'; }
-console.log('urlTemplate: ' + urlTemplate);
+//    console.log('urlTemplate: ' + urlTemplate);
    fetch(urlTemplate)
    .then(response => response.text())
    .then(response => {
@@ -266,11 +305,17 @@ console.log('urlTemplate: ' + urlTemplate);
        dateOptions.unshift(option);
      });
      dateOptions = dateOptions.sort();
+
+// this doesn't work
+//      let modsSelectedHash = {};
+//      modsSelectedHash['WB'] = 'selected="selected"';
+//      let optionMods = mods.map((mod) => <option key={mod} value={mod} {modsSelected[mod]}>{mod}</option>);
+
      let optionMods = mods.map((mod) => <option key={mod} value={mod}>{mod}</option>);
      this.setState({ optionMods: optionMods });
      let numMods = mods.length;
      this.setState({ numMods: numMods });
-     let numDateOptions = dateOptions.length;
+//      let numDateOptions = dateOptions.length;
 // UNDO
 //      this.setState({ dateOptions: dateOptions });
 //      this.setState({ numDateOptions: numDateOptions });
@@ -338,7 +383,7 @@ console.log('urlTemplate: ' + urlTemplate);
               version = responseRelease[i].releaseVersions[j].releaseVersion;
             }
           }
-console.log('s3Path ' + s3Path + ' date ' + date + ' version ' + version);
+//           console.log('s3Path ' + s3Path + ' date ' + date + ' version ' + version);	// s3Paths found
 //           let value  = date + '|' + version + '/' + release;
           let value  = s3Path;
 //           let label  = date + ' (' + version + '/' + release + ')';
@@ -351,10 +396,12 @@ console.log('s3Path ' + s3Path + ' date ' + date + ' version ' + version);
           let versionReleaseHash = {};
           Object.keys(dateVersionRelease).sort().reverse().forEach(function(label) {
             // sort labels and process in reverse, to get most recent first
-            let value = dateVersionRelease[label];
-            let matches  = label.match(/^(.*?) - (.*?) - /);
+            let value = dateVersionRelease[label] + '|' + label;
+            let matches  = label.match(/^(.*?) - (.*?) - (.*?)$/);
             let version  = matches[1];
             let release  = matches[2];
+//             let date     = matches[3];
+//             console.log('creating dateOptions date ' + date + ' version ' + version + ' release ' + release5;
             let versionRelease = version + ' - ' + release;
             if ( (releaseLatest === 'true') && (versionRelease in versionReleaseHash) ) { return; }
 	      // if only want latest release and version-release has already been added, skip it
@@ -428,7 +475,7 @@ console.log('s3Path ' + s3Path + ' date ' + date + ' version ' + version);
     const target = event.target;
     const name = target.name;
 
-console.log('set ' + name + ' value ' + event.target.value);
+    console.log('handleChange set ' + name + ' value ' + event.target.value);
     this.setState({
       [name]: event.target.value
     });
@@ -439,16 +486,22 @@ console.log('set ' + name + ' value ' + event.target.value);
     console.log('page ' + this.state.pageNumber + ' entriesPerPage ' + this.state.entriesPerPage);
   }
 
-  handleChangeMod(event) {
+  handleChangeModEvent(event) {
     this.handleChange(event);
+    console.log('handleChangeModEvent setting mod to ' + event.target.value);
+    this.setState({ mod: event.target.value});
+    this.handleChangeMod(event.target.value);
+  }
+
+  handleChangeMod(mod) {
     this.setState({ numFmsUrlsQueried: 0 });
     this.setState({ dateVersionRelease: {} });
     this.setState({ dateOptions: [] });
     this.setState({ numDateOptions: 0 });
-    this.setState({loadTimeMessage: ''});
-    this.getS3PathsFromFms('live', this.state.releaseLatest, event.target.value);
-    this.getS3PathsFromFms('test', this.state.releaseLatest, event.target.value);
-    console.log('update mod ' + this.state.mod);
+    this.setState({ loadTimeMessage: ''});
+    this.getS3PathsFromFms('live', this.state.releaseLatest, mod);
+    this.getS3PathsFromFms('test', this.state.releaseLatest, mod);
+    console.log('handleChangeMod update mod ' + this.state.mod);
   }
 
   handleChangeReleaseLatest(event) {
@@ -465,6 +518,22 @@ console.log('set ' + name + ' value ' + event.target.value);
     console.log('update release latest ' + this.state.releaseLatest);
   }
 
+  requestAndGunzipBodyIfNecessary(url) {
+    return new Promise((resolve, reject) => {
+      axios.get(url, { responseType: 'arraybuffer' })
+        .then(function (response) {
+          if (response.headers['content-type'] === 'application/x-gzip') {
+            resolve(JSON.parse(pako.inflate(response.data, {to: 'string'})));
+          } else {
+            resolve(JSON.parse(response.data));
+          }
+        })
+        .catch(function (error) {
+          reject(error);
+        });
+    })
+  }
+
   processSubmitLoadAction() {
     this.setState({showDivDiffResult: false});
     this.setState({showDivTopArrowButton: false});
@@ -475,14 +544,20 @@ console.log('set ' + name + ' value ' + event.target.value);
     if (this.state.mod === undefined) { errorMessage += 'Choose a mod\n';  }
     if (errorMessage !== '') { alert(errorMessage); return; }
     let arrDateLoad = this.state.dateLoad.split('|');
-//     let versionLoad = arrDateLoad[0];
-//     let dateLoad = arrDateLoad[1];
-    let dateLoad    = arrDateLoad[0];
-    let versionLoad = arrDateLoad[1];
+    let selectedLoadValue   = arrDateLoad[0];
+    let selectedLoadLabel   = arrDateLoad[1];
+    let matchesLoad  = selectedLoadLabel.match(/^(.*?) - (.*?) - (.*?)$/);
+    let versionLoad  = matchesLoad[1];
+    let releaseLoad  = matchesLoad[2];
+    let dateLoad     = matchesLoad[3];
+    let urlLoad = generateFmsJsonUrl(selectedLoadValue, this.state.mod);
+    console.log('load date ' + dateLoad + ' version ' + versionLoad + ' releaseLoad ' + releaseLoad);
 // UNDO FOR OLD WAY
 //     let urlLoad = generateJsonUrl(versionLoad, dateLoad, this.state.mod, this.state.baseUrl);
 // NEW SECTION
-    let urlLoad = generateFmsJsonUrl(this.state.dateLoad, this.state.mod);
+//     let urlLoad = generateFmsJsonUrl(this.state.dateLoad, this.state.mod);
+
+//             let value = dateVersionRelease[label] + '|' + label;
 
     console.log('download ' + urlLoad);
     this.setState({showDivMenuButton2A: false});
@@ -491,9 +566,17 @@ console.log('set ' + name + ' value ' + event.target.value);
     var element = document.getElementById("anchor2Cresult");
     element.scrollIntoView();
     this.setState({showDivLoadLoading: true});
-    fetch(urlLoad)
-      .then(response => response.json())
-      .then(response => { 
+
+// can no longer fetch, because some files are gzipped, need to user request and zlib
+//     fetch(urlLoad)
+//       .then(response => response.json())
+//       .then(response => { this.processDataLoad(response) }
+//     )
+    this.requestAndGunzipBodyIfNecessary(urlLoad).then(res => this.processDataLoad(res));
+
+  } // processSubmitLoadAction()
+
+  processDataLoad(response) {
           let tempRowsTableLoad = [];	// don't want to add each row one at a time and render it, add to this array and update all table rows at once
           let tempRowsTableStats = [];	// don't want to add each row one at a time and render it, add to this array and update all table rows at once
           this.setState({ rowsTableLoad: [] });
@@ -549,7 +632,7 @@ console.log('set ' + name + ' value ' + event.target.value);
               for (let j in response.data[i].stats.set_final_go_ids_c) {
                 gene_ontology_ids.push(response.data[i].stats.set_final_go_ids_c[j]); }
               count_set_final_go_ids_c = response.data[i].stats.set_final_go_ids_c.length; }
-            let count_set_final_go_ids = count_set_final_go_ids_c + count_set_final_go_ids_p + count_set_final_go_ids_c;
+            let count_set_final_go_ids = count_set_final_go_ids_f + count_set_final_go_ids_p + count_set_final_go_ids_c;
             if ('set_final_do_ids' in response.data[i].stats) {
               for (let j in response.data[i].stats.set_final_do_ids) {
                 gene_ontology_ids.push(response.data[i].stats.set_final_do_ids[j]); } }
@@ -624,9 +707,7 @@ console.log('set ' + name + ' value ' + event.target.value);
           this.setState({ rowsTableLoad: tempRowsTableLoad });
           this.setState({ loadFieldsMatchCount: fieldsMatchCount });
           this.setState({ showLabelFieldsMatchCount: showFieldsMatchCount });
-
-      })
-  } // processSubmitLoadAction()
+  } // processDataLoad()
 
   handleSubmitLoadNextPage(event) {
     event.preventDefault();
@@ -659,19 +740,27 @@ console.log('set ' + name + ' value ' + event.target.value);
     if (this.state.dateDownload === undefined) { errorMessage += 'Choose a file\n';  }
     if (this.state.mod === undefined) { errorMessage += 'Choose a mod\n';  }
     if (errorMessage !== '') { alert(errorMessage); return; }
-    let arrDateDownload = this.state.dateDownload.split('|');
-//     let versionDownload = arrDateDownload[0];
-//     let dateDownload = arrDateDownload[1];
-    let dateDownload    = arrDateDownload[0];
-    let versionDownload = arrDateDownload[1];
+
+//     let arrDateDownload = this.state.dateDownload.split('|');
+//     let dateDownload    = arrDateDownload[0];
+//     let versionDownload = arrDateDownload[1];
+//     console.log('download date ' + dateDownload + ' version ' + versionDownload);
 // UNDO FOR OLD WAY
 //     let urlDownload = generateJsonUrl(versionDownload, dateDownload, this.state.mod, this.state.baseUrl);
 
 // NEW SECTION
-    let urlDownload = generateFmsJsonUrl(this.state.dateDownload, this.state.mod);
+//     let urlDownload = generateFmsJsonUrl(this.state.dateDownload, this.state.mod);
+//     console.log('download ' + urlDownload);
 
-
-    console.log('download ' + urlDownload);
+    let arrDateDownload = this.state.dateDownload.split('|');
+    let selectedDownloadValue   = arrDateDownload[0];
+    let selectedDownloadLabel   = arrDateDownload[1];
+    let matchesDownload  = selectedDownloadLabel.match(/^(.*?) - (.*?) - (.*?)$/);
+    let versionDownload  = matchesDownload[1];
+    let releaseDownload  = matchesDownload[2];
+    let dateDownload     = matchesDownload[3];
+    let urlDownload = generateFmsJsonUrl(selectedDownloadValue, this.state.mod);
+    console.log('download date ' + dateDownload + ' version ' + versionDownload + ' releaseDownload ' + releaseDownload);
 
     let filename = dateDownload + '_' + this.state.mod + '.json';
     let downloadLink = document.createElement("a");
@@ -695,16 +784,23 @@ console.log('set ' + name + ' value ' + event.target.value);
     if (this.state.dateDownload === undefined) { errorMessage += 'Choose a file\n';  }
     if (this.state.mod === undefined) { errorMessage += 'Choose a mod\n';  }
     if (errorMessage !== '') { alert(errorMessage); return; }
-    let arrDateDownload = this.state.dateDownload.split('|');
-//     let versionDownload = arrDateDownload[0];
-//     let dateDownload = arrDateDownload[1];
-    let dateDownload    = arrDateDownload[0];
-    let versionDownload = arrDateDownload[1];
 // UNDO FOR OLD WAY
+//     let arrDateDownload = this.state.dateDownload.split('|');
+//     let dateDownload    = arrDateDownload[0];
+//     let versionDownload = arrDateDownload[1];
 //     let urlDownload = generateJsonUrl(versionDownload, dateDownload, this.state.mod, this.state.baseUrl);
 // NEW SECTION
-    let urlDownload = generateFmsJsonUrl(this.state.dateDownload, this.state.mod);
-    console.log('download ' + urlDownload);
+//     let urlDownload = generateFmsJsonUrl(this.state.dateDownload, this.state.mod);
+//     console.log('download ' + urlDownload);
+    let arrDateDownload = this.state.dateDownload.split('|');
+    let selectedDownloadValue   = arrDateDownload[0];
+    let selectedDownloadLabel   = arrDateDownload[1];
+    let matchesDownload  = selectedDownloadLabel.match(/^(.*?) - (.*?) - (.*?)$/);
+    let versionDownload  = matchesDownload[1];
+    let releaseDownload  = matchesDownload[2];
+    let dateDownload     = matchesDownload[3];
+    let urlDownload = generateFmsJsonUrl(selectedDownloadValue, this.state.mod);
+    console.log('download date ' + dateDownload + ' version ' + versionDownload + ' releaseDownload ' + releaseDownload);
     window.open(urlDownload);
   }
 
@@ -780,30 +876,54 @@ console.log('set ' + name + ' value ' + event.target.value);
   handleSubmitCompare(event) {
     let t0 = Date.now();
     console.log('submit ' + event.target.value);
+    event.preventDefault();
     let errorMessage = '';
     if (this.state.date1 === undefined) {     errorMessage += 'Choose an old file\n';         }
     if (this.state.date2 === undefined) {     errorMessage += 'Choose a new file\n';          }
     if (this.state.diffField === undefined) { errorMessage += 'Choose a field to compare\n';  }
     if (this.state.mod === undefined) {       errorMessage += 'Choose a mod\n';               }
     if (errorMessage !== '') { alert(errorMessage); return; }
+
+//     console.log('this.state.date1 : ' + this.state.date1);
+//     let arrDate1 = this.state.date1.split('|');
+// //     let version1 = arrDate1[0];
+// //     let date1    = arrDate1[1];
+//     let date1    = arrDate1[0];
+//     let version1 = arrDate1[1];
+// // UNDO FOR OLD WAY
+// //     let url1     = generateJsonUrl(version1, date1, this.state.mod, this.state.baseUrl);
+// // NEW SECTION
+//     let url1 = generateFmsJsonUrl(date1, this.state.mod);
+//     let arrDate2 = this.state.date2.split('|');
+// //     let version2 = arrDate2[0];
+// //     let date2    = arrDate2[1];
+//     let date2    = arrDate2[0];
+//     let version2 = arrDate2[1];
+// // UNDO FOR OLD WAY
+// //     let url2     = generateJsonUrl(version2, date2, this.state.mod, this.state.baseUrl);
+// // NEW SECTION
+//     let url2 = generateFmsJsonUrl(date2, this.state.mod);
+
     let arrDate1 = this.state.date1.split('|');
-//     let version1 = arrDate1[0];
-//     let date1    = arrDate1[1];
-    let date1    = arrDate1[0];
-    let version1 = arrDate1[1];
-// UNDO FOR OLD WAY
-//     let url1     = generateJsonUrl(version1, date1, this.state.mod, this.state.baseUrl);
-// NEW SECTION
-    let url1 = generateFmsJsonUrl(date1, this.state.mod);
+    let selected1Value   = arrDate1[0];
+    let selected1Label   = arrDate1[1];
+    let matches1  = selected1Label.match(/^(.*?) - (.*?) - (.*?)$/);
+    let version1  = matches1[1];
+    let release1  = matches1[2];
+    let date1     = matches1[3];
+    let url1 = generateFmsJsonUrl(selected1Value, this.state.mod);
+    console.log('diff 1 date ' + date1 + ' version ' + version1 + ' release1 ' + release1);
+
     let arrDate2 = this.state.date2.split('|');
-//     let version2 = arrDate2[0];
-//     let date2    = arrDate2[1];
-    let date2    = arrDate2[0];
-    let version2 = arrDate2[1];
-// UNDO FOR OLD WAY
-//     let url2     = generateJsonUrl(version2, date2, this.state.mod, this.state.baseUrl);
-// NEW SECTION
-    let url2 = generateFmsJsonUrl(date2, this.state.mod);
+    let selected2Value   = arrDate2[0];
+    let selected2Label   = arrDate2[1];
+    let matches2  = selected2Label.match(/^(.*?) - (.*?) - (.*?)$/);
+    let version2  = matches2[1];
+    let release2  = matches2[2];
+    let date2     = matches2[3];
+    let url2 = generateFmsJsonUrl(selected2Value, this.state.mod);
+    console.log('diff 2 date ' + date2 + ' version ' + version2 + ' release2 ' + release2);
+
     this.setState({headerStatsDate1: date1});
     this.setState({headerStatsDate2: date2});
     this.setState({headerDiffDate1: date1});
@@ -817,12 +937,26 @@ console.log('set ' + name + ' value ' + event.target.value);
     var element = document.getElementById("anchor2Aresult");
     element.scrollIntoView();
 
-    fetch(url1)
-      .then(response1 => response1.json())
-      .then(response1 => {
-          fetch(url2)
-            .then(response2 => response2.json())
-            .then(response2 => {
+// can no longer fetch, because some files are gzipped, need to user request and zlib
+//     fetch(url1)
+//       .then(response1 => response1.json())
+//       .then(response1 => {
+//           fetch(url2)
+//             .then(response2 => response2.json())
+//             .then(response2 => {
+//             });
+//       });
+
+    this.requestAndGunzipBodyIfNecessary(url1).then((res1) => {
+      this.requestAndGunzipBodyIfNecessary(url2).then((res2) => {
+        this.processDataCompare(res1, res2, t0);
+      })
+    });
+
+  } // handleSubmitCompare(event)
+
+
+  processDataCompare(response1, response2, t0) {
                 let tempRowsTableDiff = [];	// don't want to add each row one at a time and render it, add to this array and update all table rows at once
                 let tempRowsTableStats = [];	// don't want to add each row one at a time and render it, add to this array and update all table rows at once
                 this.setState({showDivDiffResult: true});
@@ -972,13 +1106,10 @@ console.log('set ' + name + ' value ' + event.target.value);
                 this.setState({
                   rowsTableDiff: tempRowsTableDiff
                 });
-            });
-      });
-
+// this doesn't work, it tells the execution time before the requests return and process
     let t1 = Date.now();
     console.log('Render took', t1-t0, 'ms');
-    event.preventDefault();
-  } // handleSubmitCompare(event)
+  } // processDataCompare(response1, response2) 
 
   reloadPage() {
     window.location.reload();
@@ -1017,7 +1148,7 @@ console.log('set ' + name + ' value ' + event.target.value);
         <div id='div_section_mod'>
           <label>
             <h3>Select your Mod:</h3>
-            <select name="mod" id="mod" size={this.state.numMods} defaultValue="" onChange={this.handleChangeMod}>
+            <select name="mod" id="mod" size={this.state.numMods} defaultValue="" onChange={this.handleChangeModEvent}>
               {this.state.optionMods}
             </select>
           </label><br/>
