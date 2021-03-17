@@ -50,7 +50,6 @@ class ReportTool extends React.Component {
       headerStatsDate2: 'date2',
       headerDiffDate1: 'date1',
       headerDiffDate2: 'date2',
-      baseUrl: '',
       mod: queryMod,
       diffKeywordFilter: '',
       diffGeneNameFilter: '',
@@ -68,10 +67,8 @@ class ReportTool extends React.Component {
       loadComparisonGoids: '>=',
       loadGoidsCount: 0,
       optionMods: [],
-      numMods: 0,
       diffField: undefined,
       optionDiffFields: [],
-      numDiffFields: 0,
       diffFieldsArray: [],
       diffFieldsHash: [],
       dateOptions: [],
@@ -109,8 +106,6 @@ class ReportTool extends React.Component {
   }
 
   componentDidMount() {
-    let urlRoot = process.env.REACT_APP_URLROOT !== undefined ? process.env.REACT_APP_URLROOT :
-        'https://reports.alliancegenome.org/';
     console.log('componentDidMount this.state.mod ' + this.state.mod);
     let dateObject = new Date();
     let timeStartReleasesFetch = dateObject.getTime();
@@ -119,46 +114,42 @@ class ReportTool extends React.Component {
     this.setState({loadTimeMessage: this.state.loadTimeMessage + 'Start loading at ' + dateObject + '.\n'});
     console.log( timeStartReleasesFetch );
     if (this.state.mod !== undefined) {
-      this.populateFileList('live', this.state.releaseLatest, this.state.mod);
-      this.populateFileList('test', this.state.releaseLatest, this.state.mod); }
+      this.addFilesFromFMS('live', this.state.releaseLatest, this.state.mod);
+      this.addFilesFromFMS('test', this.state.releaseLatest, this.state.mod);
+    }
+    this.addFilesFromIndexFile();
+  }
+
+  addFilesFromIndexFile() {
+    let urlRoot = process.env.REACT_APP_URLROOT !== undefined ? process.env.REACT_APP_URLROOT :
+        'https://reports.alliancegenome.org/';
     let urlTemplate = urlRoot;
     if (urlRoot.match(/textpresso/)) { urlTemplate = urlRoot + 'index.xml'; }
     fetch(urlTemplate)
         .then(response => response.text())
         .then(response => {
-          let baseUrl = urlRoot + 'gene-descriptions/';
-          this.setState({ baseUrl: baseUrl });
-
           let arrayFiles = response.match(/gene-descriptions[^<]*?\/\d{8}\/[^<]*?\.json/g);
-          let modsHash = {};
-          let datesHash = {};
-          for (let i in arrayFiles) {
-            let fileLocation = arrayFiles[i];
-            let matches  = fileLocation.match(/gene-descriptions\/(.*?)\/\d{8}\/(\d{8})_([\w]*?)\.json/);
+          let addedMods = new Set();
+          let dates = new Set();
+          arrayFiles.forEach(arrayFile => {
+            let matches  = arrayFile.match(/gene-descriptions\/(.*?)\/\d{8}\/(\d{8})_([\w]*?)\.json/);
             let version  = matches[1];
             let date     = matches[2];
             let mod      = matches[3];
-            let value    = date + '|' + version;
-            datesHash[value] = value;
-            modsHash[mod] = mod;
-          }
-
-
-          let mods = Object.keys(modsHash);
+            dates.add(date + '|' + version);
+            addedMods.add(mod);
+          })
           let dateOptions = [];
-          Object.keys(datesHash).sort().forEach(function(key) {
-            let partsArray = key.split('|'), date = partsArray[0], version = partsArray[1];
-            let value    = date + '|' + version;
+          [...dates].sort().forEach(dateVersion => {
+            let partsArray = dateVersion.split('|'), date = partsArray[0], version = partsArray[1];
             let label   = date + ' (' + version + ')';
-            let option = renderOption(label, value);
+            let option = renderOption(label, dateVersion);
             dateOptions.unshift(option);
           });
           dateOptions = dateOptions.sort();
 
-          let optionMods = mods.map((mod) => <option key={mod} value={mod}>{mod}</option>);
+          let optionMods = [...addedMods].map(mod => <option key={mod} value={mod}>{mod}</option>);
           this.setState({ optionMods: optionMods });
-          let numMods = mods.length;
-          this.setState({ numMods: numMods });
           let diffFieldsHash = [];
           diffFieldsHash['description'] = "Description (Full)";
           diffFieldsHash['do_description'] = "DO Description";
@@ -171,8 +162,6 @@ class ReportTool extends React.Component {
           this.setState({ diffFieldsArray: diffFieldsArray });
           let optionDiffFields = diffFieldsArray.map((diffField) => <option key={diffField} value={diffField}>{diffField}</option>);
           this.setState({ optionDiffFields: optionDiffFields });
-          let numDiffFields = diffFieldsArray.length;
-          this.setState({ numDiffFields: numDiffFields });
 
           let checkboxDiffFields = [];
           for (let diffField in response.diffFields) { checkboxDiffFields[diffField] = true; }
@@ -187,7 +176,7 @@ class ReportTool extends React.Component {
         })
   }
 
-  populateFileList(testOrLive, releaseLatest, mod) {
+  addFilesFromFMS(testOrLive, releaseLatest, mod) {
     getS3PathsFromFms(testOrLive, releaseLatest, mod).then(paths => {
       let s3FilePaths = this.state.s3FilePaths;
       paths.forEach(path => s3FilePaths.push(path));
@@ -249,8 +238,8 @@ class ReportTool extends React.Component {
     this.setState({ s3FilePaths: [] });
     this.setState({ dateOptions: [] });
     this.setState({ loadTimeMessage: ''});
-    this.populateFileList('live', this.state.releaseLatest, mod);
-    this.populateFileList('test', this.state.releaseLatest, mod);
+    this.addFilesFromFMS('live', this.state.releaseLatest, mod);
+    this.addFilesFromFMS('test', this.state.releaseLatest, mod);
     console.log('handleChangeMod update mod ' + this.state.mod);
   }
 
@@ -260,8 +249,8 @@ class ReportTool extends React.Component {
     this.setState({ s3FilePaths: [] });
     this.setState({ dateOptions: [] });
     this.setState({loadTimeMessage: ''});
-    this.populateFileList('live', event.target.value, this.state.mod);
-    this.populateFileList('test', event.target.value, this.state.mod);
+    this.addFilesFromFMS('live', event.target.value, this.state.mod);
+    this.addFilesFromFMS('test', event.target.value, this.state.mod);
     console.log('update release latest ' + this.state.releaseLatest);
   }
 
@@ -831,7 +820,7 @@ class ReportTool extends React.Component {
         <div id='div_section_mod'>
           <label>
             <h3>Select your Mod:</h3>
-            <select name="mod" id="mod" size={this.state.numMods} defaultValue="" onChange={this.handleChangeModEvent}>
+            <select name="mod" id="mod" size={this.state.optionMods.length} defaultValue="" onChange={this.handleChangeModEvent}>
               {this.state.optionMods}
             </select>
           </label><br/>
@@ -967,7 +956,7 @@ class ReportTool extends React.Component {
           </td><td style={{verticalAlign: 'top'}}>
           <label>
             Select field to compare:<br/>
-            <select name="diffField" id="diffField" size={this.state.numDiffFields}  onChange={this.handleChange}>
+            <select name="diffField" id="diffField" size={this.state.diffFieldsArray.length}  onChange={this.handleChange}>
               {this.state.optionDiffFields}
             </select>
           </label>
