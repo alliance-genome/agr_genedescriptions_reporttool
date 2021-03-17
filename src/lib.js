@@ -42,7 +42,7 @@ export const getS3PathsFromFms = (testOrLive, releaseLatest, mod) => {
         .then(responseRelease => {
           resolve(responseRelease.map(res => {
             return {
-              releaseVersion: res.releaseVersions.sort().reverse()[0].releaseVersion,
+              releaseVersion: res.releaseVersions.sort()[0].releaseVersion,
               releaseType: releaseType,
               uploadDate: generateDateString(res.uploadDate),
               s3Path: res.s3Path
