@@ -75,7 +75,6 @@ class ReportTool extends React.Component {
       diffFieldsArray: [],
       diffFieldsHash: [],
       dateOptions: [],
-      numDateOptions: 0,
       loadFieldsMatchCount: [],
       showLabelFieldsMatchCount: [],
       checkboxDiffFields: [],
@@ -120,8 +119,8 @@ class ReportTool extends React.Component {
     this.setState({loadTimeMessage: this.state.loadTimeMessage + 'Start loading at ' + dateObject + '.\n'});
     console.log( timeStartReleasesFetch );
     if (this.state.mod !== undefined) {
-      this.setS3Paths('live', this.state.releaseLatest, this.state.mod);
-      this.setS3Paths('test', this.state.releaseLatest, this.state.mod); }
+      this.populateFileList('live', this.state.releaseLatest, this.state.mod);
+      this.populateFileList('test', this.state.releaseLatest, this.state.mod); }
     let urlTemplate = urlRoot;
     if (urlRoot.match(/textpresso/)) { urlTemplate = urlRoot + 'index.xml'; }
     fetch(urlTemplate)
@@ -188,28 +187,26 @@ class ReportTool extends React.Component {
         })
   }
 
-  setS3Paths(testOrLive, releaseLatest, mod) {
+  populateFileList(testOrLive, releaseLatest, mod) {
     getS3PathsFromFms(testOrLive, releaseLatest, mod).then(paths => {
       let s3FilePaths = this.state.s3FilePaths;
       paths.forEach(path => s3FilePaths.push(path));
       this.setState({s3FilePaths: s3FilePaths});
       this.setState({numFmsUrlsQueried: this.state.numFmsUrlsQueried + 1});
       if (this.state.numFmsUrlsQueried >= this.state.numFmsUrlsToQuery) {
-        let addedVersionRelease = new Set();
+        let processedVersionRelease = new Set();
         s3FilePaths.sort((path1, path2) => (path1.releaseVersion + ' - ' + path1.releaseType + ' - ' +
             path1.uploadDate) < (path2.releaseVersion + ' - ' + path2.releaseType + ' - ' + path2.uploadDate) ? 1 : -1)
             .forEach(path => {
           // sort labels and process in reverse, to get most recent first
           let versionRelease = path.releaseVersion + ' - ' + path.releaseType;
-          if ((releaseLatest === 'true') && (addedVersionRelease.has(versionRelease))) { return; }
-          addedVersionRelease.add(versionRelease);	// add versionRelease to set of already added
+          if ((releaseLatest === 'true') && (processedVersionRelease.has(versionRelease))) { return; }
+          processedVersionRelease.add(versionRelease);	// add versionRelease to set of already added
           let option = renderOption(path.releaseVersion + ' - ' + path.releaseType + ' - ' + path.uploadDate,
               path.s3Path);
           let dateOptions = this.state.dateOptions;
           dateOptions.push(option);					// add older version releases later in the list
-          let numDateOptions = dateOptions.length;
           this.setState({dateOptions: dateOptions});
-          this.setState({numDateOptions: numDateOptions});
         });
         let dateObject = new Date();
         let timeEndVersionsFetch = dateObject.getTime();
@@ -251,10 +248,9 @@ class ReportTool extends React.Component {
     this.setState({ numFmsUrlsQueried: 0 });
     this.setState({ s3FilePaths: [] });
     this.setState({ dateOptions: [] });
-    this.setState({ numDateOptions: 0 });
     this.setState({ loadTimeMessage: ''});
-    this.setS3Paths('live', this.state.releaseLatest, mod);
-    this.setS3Paths('test', this.state.releaseLatest, mod);
+    this.populateFileList('live', this.state.releaseLatest, mod);
+    this.populateFileList('test', this.state.releaseLatest, mod);
     console.log('handleChangeMod update mod ' + this.state.mod);
   }
 
@@ -263,10 +259,9 @@ class ReportTool extends React.Component {
     this.setState({ numFmsUrlsQueried: 0 });
     this.setState({ s3FilePaths: [] });
     this.setState({ dateOptions: [] });
-    this.setState({ numDateOptions: 0 });
     this.setState({loadTimeMessage: ''});
-    this.setS3Paths('live', event.target.value, this.state.mod);
-    this.setS3Paths('test', event.target.value, this.state.mod);
+    this.populateFileList('live', event.target.value, this.state.mod);
+    this.populateFileList('test', event.target.value, this.state.mod);
     console.log('update release latest ' + this.state.releaseLatest);
   }
 
@@ -958,14 +953,14 @@ class ReportTool extends React.Component {
           <tr><td style={{verticalAlign: 'top'}}>
           <label>
             Select old file:<br/>
-            <select name="date1" id="date1" size={this.state.numDateOptions} onChange={this.handleChange}>
+            <select name="date1" id="date1" size={this.state.dateOptions.length} onChange={this.handleChange}>
               {this.state.dateOptions}
             </select>
           </label>
           </td><td style={{verticalAlign: 'top'}}>
           <label>
             Select new file:<br/>
-            <select name="date2" id="date2" size={this.state.numDateOptions} onChange={this.handleChange}>
+            <select name="date2" id="date2" size={this.state.dateOptions.length} onChange={this.handleChange}>
               {this.state.dateOptions}
             </select>
           </label>
@@ -1029,7 +1024,7 @@ class ReportTool extends React.Component {
           <h3>Download a file</h3>
           <label id='anchor2Bcontrol'>
             Select file to download:<br/>
-            <select name="dateDownload" id="dateDownload" size={this.state.numDateOptions} onChange={this.handleChange}>
+            <select name="dateDownload" id="dateDownload" size={this.state.dateOptions.length} onChange={this.handleChange}>
               {this.state.dateOptions}
             </select>
           </label>
@@ -1132,7 +1127,7 @@ Doesn't work cross origin (across domains)
    
           <label id='anchor2Ccontrol'>
             Select file to view:<br/>
-            <select name="dateLoad" id="dateLoad" size={this.state.numDateOptions} onChange={this.handleChange}>
+            <select name="dateLoad" id="dateLoad" size={this.state.dateOptions.length} onChange={this.handleChange}>
               {this.state.dateOptions}
             </select>
           </label>
