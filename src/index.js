@@ -3,72 +3,30 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import pako from 'pako';
 import axios from 'axios';
-
-// for github, need to 
-// npm install axios
-// npm install pako
-
-
-// UNDO FOR OLD WAY
-// function generateJsonUrl(version, date, mod, baseUrl) { return(baseUrl + version + '/' + date + '/' + date + '_' + mod + '.json'); }
-
-function generateFmsJsonUrl(url, mod) {
-  let baseUrl = 'https://download.alliancegenome.org/';
-//   let sampleMod = 'JSON_WB';
-//   let chosenMod = 'JSON_' + mod;
-  let correctUrl = url.replace(/WB/g, mod);
-  return (baseUrl + correctUrl);
-}
-
-function generateDateString(time) {
-  let dateObject = new Date(time);
-  let year = dateObject.getFullYear().toString();
-  let month = (dateObject.getMonth() + 1).toString();
-  if (month < 10) { month = '0' + month; }
-  let day = dateObject.getDate().toString();
-  if (day < 10) { day = '0' + day; }
-  let hour = dateObject.getHours().toString();
-  if (hour < 10) { hour = '0' + hour; }
-  let minute = dateObject.getMinutes().toString();
-  if (minute < 10) { minute = '0' + minute; }
-  let second = dateObject.getSeconds().toString();
-  if (second < 10) { second = '0' + second; }
-  let date = year + '-' + month + '-' + day + ' ' + hour + ':' + minute + ':' + second;
-  return date;
-}
-
-function renderOption(label, value) {
-  return(<option key={label} value={value}>{label}</option>);
-}
+import {generateDateString, generateFmsJsonUrl, getHtmlVar, getS3PathsFromFms, renderOption} from "./lib";
 
 
 class ReportTool extends React.Component {
   constructor(props) {
     super(props);
-
-    function getHtmlVar() { return new URLSearchParams(window.location.search); }
     let queryMod = getHtmlVar().get('mod');
     if (queryMod != null) {
        console.log('constructor queryMod ' + queryMod);
-//        document.getElementById("mod").value = queryMod;	// html element doesn't exist yet
     } else { queryMod = undefined; }
 
     this.state = {
       showDownloadLink: false,
       downloadLinkText: 'linkText',
       downloadLinkUrl: 'http://tazendra.caltech.edu/~azurebrd/cgi-bin/forms/agr/data/',
-
       releaseVersions: {},
       releaseLatest: 'true',
       numReleaseVersions: 0, 
       numVersionsFetched: 0, 
       timeStartReleasesFetch: 0,
       loadTimeMessage: '',
-
-      dateVersionRelease: {},
+      s3FilePaths: [],
       numFmsUrlsQueried: 0,
       numFmsUrlsToQuery: 2,
-
       rowsTableLoad: [],
       rowsTableLoadStats: [],
       rowsTableDiff: [],
@@ -80,9 +38,7 @@ class ReportTool extends React.Component {
       backgroundDownloadTab: 'white',
       backgroundLoadTab: 'white',
       showDivDiffSection: false,
-//       showDivDiffSection: true,
       showDivDownloadSection: false,
-//       showDivLoadSection: false,
       showDivLoadSection: true,
       showDivDiffLoading: false,
       showDivLoadLoading: false,
@@ -96,8 +52,6 @@ class ReportTool extends React.Component {
       headerDiffDate2: 'date2',
       baseUrl: '',
       mod: queryMod,
-//       mod: undefined,
-//       mod: 'WB',
       diffKeywordFilter: '',
       diffGeneNameFilter: '',
       loadOntologyFilter: '',
@@ -135,7 +89,6 @@ class ReportTool extends React.Component {
 
     this.handleInputChange = this.handleInputChange.bind(this);
     this.handleInputChangeCheckboxDiffFields = this.handleInputChangeCheckboxDiffFields.bind(this);
-
     this.handleClickShowSectionDiff = this.handleClickShowSectionDiff.bind(this);
     this.handleClickShowSectionDownload = this.handleClickShowSectionDownload.bind(this);
     this.handleClickShowSectionView = this.handleClickShowSectionView.bind(this);
@@ -157,319 +110,120 @@ class ReportTool extends React.Component {
   }
 
   componentDidMount() {
-    let urlRoot = process.env.REACT_APP_URLROOT;
-
+    let urlRoot = process.env.REACT_APP_URLROOT !== undefined ? process.env.REACT_APP_URLROOT :
+        'https://reports.alliancegenome.org/';
     console.log('componentDidMount this.state.mod ' + this.state.mod);
-
-//    console.log("urlRoot " + urlRoot);	// not getting this value when running in docker
-    if (urlRoot === undefined) { urlRoot = 'https://reports.alliancegenome.org/'; }
-
-    function getHtmlVar() { return new URLSearchParams(window.location.search); }
-    let queryMod = getHtmlVar().get('mod');
-    if (queryMod != null) {
-//        document.getElementById("mod").value = queryMod;	// updates, but render has already happenned, so doesn't show on browser
-//        document.getElementById('mod').value = 'WB';
-//        document.getElementById('mod').getElementsByTagName('option')[0].selected = 'selected';	// doesn't work
-
-//        document.getElementById('test').value = queryMod;	// can set some input, if the element is in the render
-//        alert('alert');
-
-//        console.log('numFmsUrlsToQuery ' + this.state.numFmsUrlsToQuery);
-//        console.log('queryMod ' + queryMod);
-//        console.log('this.state.mod ' + this.state.mod);
-    }
-
-
-//     this.getS3PathsFromFms('live', this.state.releaseLatest, event.target.value);
-//     this.getS3PathsFromFms('test', this.state.releaseLatest, event.target.value);
-//     console.log('handleChangeMod update mod ' + this.state.mod);
-
-
-// NEW SECTION
     let dateObject = new Date();
     let timeStartReleasesFetch = dateObject.getTime();
     this.setState({ timeStartReleasesFetch: timeStartReleasesFetch });
     console.log( dateObject );
     this.setState({loadTimeMessage: this.state.loadTimeMessage + 'Start loading at ' + dateObject + '.\n'});
     console.log( timeStartReleasesFetch );
+    if (this.state.mod !== undefined) {
+      this.setS3Paths('live', this.state.releaseLatest, this.state.mod);
+      this.setS3Paths('test', this.state.releaseLatest, this.state.mod); }
+    let urlTemplate = urlRoot;
+    if (urlRoot.match(/textpresso/)) { urlTemplate = urlRoot + 'index.xml'; }
+    fetch(urlTemplate)
+        .then(response => response.text())
+        .then(response => {
+          let baseUrl = urlRoot + 'gene-descriptions/';
+          this.setState({ baseUrl: baseUrl });
 
-// if we had a default MOD, this would populate the files to select with it
-    if (this.state.mod !== undefined) { 
-      this.getS3PathsFromFms('live', this.state.releaseLatest, this.state.mod);
-      this.getS3PathsFromFms('test', this.state.releaseLatest, this.state.mod); }
-
-// //       dateVersionRelease: {},
-// //       numFmsUrlsQueried: 0,
-// //       numFmsUrlsToQuery: 2,
-//     let urlReleaseLive = 'https://fms.alliancegenome.org/api/datafile/by/GENE-DESCRIPTION-JSON/WB';
-//     let release = 'release';
-//     fetch(urlReleaseLive)
-//       .then(responseRelease => responseRelease.json())
-//       .then(responseRelease => { 
-//         for (let i in responseRelease) { 
-//           let s3Path = responseRelease[i].s3Path;
-//           let time = responseRelease[i].releaseVersions[0].releaseDate;
-//           let date = generateDateString(time);
-//           let version = responseRelease[i].releaseVersions[0].releaseVersion;
-// console.log('s3Path ' + s3Path + ' date ' + date + ' version ' + version);
-//           let value  = date + '|' + version + '/' + release;
-//           let label  = date + ' (' + version + '/' + release + ') path ' + s3Path;
-// 
-//           let option = renderOption(label, value);
-//           let dateOptions = this.state.dateOptions;
-//           dateOptions.unshift(option);
-//           dateOptions = dateOptions.sort();
-//           let numDateOptions = dateOptions.length;
-//           this.setState({ dateOptions: dateOptions });
-//           this.setState({ numDateOptions: numDateOptions });
-//         }
-//       });
-
-// NEW SECTION
-//    let urlRelease = 'https://fms.alliancegenome.org/api/releaseversion/all';
-//    let dateObject = new Date();
-//    let timeStartReleasesFetch = dateObject.getTime();
-//    this.setState({ timeStartReleasesFetch: timeStartReleasesFetch });
-//    console.log( dateObject );
-//    this.setState({loadTimeMessage: this.state.loadTimeMessage + 'Start loading at ' + dateObject + '.\n'});
-//    console.log( timeStartReleasesFetch );
-//    fetch(urlRelease)
-//      .then(responseRelease => responseRelease.json())
-//      .then(responseRelease => {
-// //        let releaseVersions = [];
-//        let releaseVersions = {};
-//        for (let i in responseRelease) { 
-// //          releaseVersions.push(responseRelease[i].releaseVersion) 
-//          let date = generateDateString(responseRelease[i].releaseDate);
-//          console.log('version ' + responseRelease[i].releaseVersion);
-//          console.log('date ' + date);
-//          releaseVersions[date] = responseRelease[i].releaseVersion;
-//        }
-//        this.setState({ releaseVersions: releaseVersions });
-//        let numReleaseVersions = Object.keys(releaseVersions).length;
-//        this.setState({ numReleaseVersions: numReleaseVersions });
-// 
-// //        let dateOptions = [];
-//        Object.keys(releaseVersions).sort().forEach(function(date) {
-// //      this.setState({ baseUrl: 'whatever' });
-//          let version = releaseVersions[date];
-//          console.log('inside ' + date + ' ' + releaseVersions[date]);
-//          let mod = 'WB';
-//          this.getS3pathIntoDateOptions(date, version, mod, 'live');
-//          this.getS3pathIntoDateOptions(date, version, mod, 'test');
-//        }.bind(this))
-//      });
-// curl -X GET "https://fms.alliancegenome.org/api/releaseversion/all" -H "accept: application/json"
-// curl -X GET "https://fms.alliancegenome.org/api/datafile/by/2.3.0/GENE-DESCRIPTION-JSON/WB?latest=true"  -H "accept: application/json" | json_pp
-//         "s3Path" : "2.3.0/GENE-DESCRIPTION-TEST-JSON/WB/GENE-DESCRIPTION-TEST-JSON_WB_0.json"
-//     https://download.alliancegenome.org/2.3.0/GENE-DESCRIPTION-TEST-JSON/WB/GENE-DESCRIPTION-TEST-JSON_WB_0.json
-
-
-
-   let urlTemplate = urlRoot;
-   if (urlRoot.match(/textpresso/)) { urlTemplate = urlRoot + 'index.xml'; }
-//    console.log('urlTemplate: ' + urlTemplate);
-   fetch(urlTemplate)
-   .then(response => response.text())
-   .then(response => {
-     let baseUrl = urlRoot + 'gene-descriptions/';
-     this.setState({ baseUrl: baseUrl });
-
-     let arrayFiles = response.match(/gene-descriptions[^<]*?\/\d{8}\/[^<]*?\.json/g);
-     let modsHash = {};
-     let datesHash = {};
-     for (let i in arrayFiles) {
-       let fileLocation = arrayFiles[i];
-       let matches  = fileLocation.match(/gene-descriptions\/(.*?)\/\d{8}\/(\d{8})_([\w]*?)\.json/);
-       let version  = matches[1];
-       let date     = matches[2];
-       let mod      = matches[3];
-//        let value    = version + '|' + date;
-       let value    = date + '|' + version;
-//        let label    = date + ' (' + version + ')';
-//        let option   = renderOption(label, value);
-       datesHash[value] = value;
-       modsHash[mod] = mod;
-     }
-
-
-     let mods = Object.keys(modsHash);
-     let dateOptions = [];
-     Object.keys(datesHash).sort().forEach(function(key) {
-//        let partsArray = key.split('|'), version = partsArray[0], date = partsArray[1];
-       let partsArray = key.split('|'), date = partsArray[0], version = partsArray[1];
-//        let value   = version + '|' + date;
-       let value    = date + '|' + version;
-       let label   = date + ' (' + version + ')';
-       let option = renderOption(label, value);
-       dateOptions.unshift(option);
-     });
-     dateOptions = dateOptions.sort();
-
-// this doesn't work
-//      let modsSelectedHash = {};
-//      modsSelectedHash['WB'] = 'selected="selected"';
-//      let optionMods = mods.map((mod) => <option key={mod} value={mod} {modsSelected[mod]}>{mod}</option>);
-
-     let optionMods = mods.map((mod) => <option key={mod} value={mod}>{mod}</option>);
-     this.setState({ optionMods: optionMods });
-     let numMods = mods.length;
-     this.setState({ numMods: numMods });
-//      let numDateOptions = dateOptions.length;
-// UNDO
-//      this.setState({ dateOptions: dateOptions });
-//      this.setState({ numDateOptions: numDateOptions });
-
-     let diffFieldsHash = [];
-     diffFieldsHash['description'] = "Description (Full)";
-     diffFieldsHash['do_description'] = "DO Description";
-     diffFieldsHash['go_description'] = "GO Description";
-     diffFieldsHash['orthology_description'] = "Orthology Description";
-     diffFieldsHash['tissue_expression_description'] = "Expression Description";
-     
-     this.setState({ diffFieldsHash: diffFieldsHash });
-     let diffFieldsArray = Object.keys(diffFieldsHash);
-     this.setState({ diffFieldsArray: diffFieldsArray });
-     let optionDiffFields = diffFieldsArray.map((diffField) => <option key={diffField} value={diffField}>{diffField}</option>);
-     this.setState({ optionDiffFields: optionDiffFields });
-     let numDiffFields = diffFieldsArray.length;
-     this.setState({ numDiffFields: numDiffFields });
-
-     let checkboxDiffFields = [];
-     for (let diffField in response.diffFields) { checkboxDiffFields[diffField] = true; }
-     this.setState({ checkboxDiffFields: checkboxDiffFields });
-
-     document.getElementById("mod").value = "";
-     document.getElementById("date1").value = "";
-     document.getElementById("date2").value = "";
-     document.getElementById("dateDownload").value = "";
-     document.getElementById("dateLoad").value = "";
-     document.getElementById("diffField").value = "";
-   })
- } // componentDidMount()
-
-  getS3PathsFromFms(testOrLive, releaseLatest, mod) {
-    // for some reason handleChangeReleaseLatest(event) does setState, but this state doesn't update to the new value, so have to pass value to function
-//       dateVersionRelease: {},
-//       numFmsUrlsQueried: 0,
-//       numFmsUrlsToQuery: 2,
-//     let urlRelease = 'https://fms.alliancegenome.org/api/datafile/by/GENE-DESCRIPTION-JSON/WB';
-//     let urlRelease = 'https://fms.alliancegenome.org/api/datafile/by/GENE-DESCRIPTION-JSON/WB?latest=false';
-//     let urlRelease = 'https://fms.alliancegenome.org/api/datafile/by/GENE-DESCRIPTION-JSON/WB?latest=' + this.state.releaseLatest;
-//     let urlRelease = 'https://fms.alliancegenome.org/api/datafile/by/GENE-DESCRIPTION-JSON/WB?latest=' + releaseLatest;
-//     let urlRelease = 'https://fms.alliancegenome.org/api/datafile/by/GENE-DESCRIPTION-JSON/' + mod + '?latest=' + releaseLatest;	// if fms worked to show the latest for a given version-release instead of latest overall
-    let urlRelease = 'https://fms.alliancegenome.org/api/datafile/by/GENE-DESCRIPTION-JSON/' + mod + '?latest=false';
-    let release = 'release/stage';
-    if (testOrLive === 'test') {
-//       urlRelease = 'https://fms.alliancegenome.org/api/datafile/by/GENE-DESCRIPTION-TEST-JSON/WB';
-//       urlRelease = 'https://fms.alliancegenome.org/api/datafile/by/GENE-DESCRIPTION-TEST-JSON/WB?latest=false';
-//       urlRelease = 'https://fms.alliancegenome.org/api/datafile/by/GENE-DESCRIPTION-TEST-JSON/WB?latest=' + this.state.releaseLatest;
-//       urlRelease = 'https://fms.alliancegenome.org/api/datafile/by/GENE-DESCRIPTION-TEST-JSON/WB?latest=' + releaseLatest;
-//       urlRelease = 'https://fms.alliancegenome.org/api/datafile/by/GENE-DESCRIPTION-TEST-JSON/' + mod + '?latest=' + releaseLatest;	// if fms worked to show the latest for a given version-release instead of latest overall
-      urlRelease = 'https://fms.alliancegenome.org/api/datafile/by/GENE-DESCRIPTION-TEST-JSON/' + mod + '?latest=false';
-      release = 'pre-release/build'; }
-    fetch(urlRelease)
-      .then(responseRelease => responseRelease.json())
-      .then(responseRelease => { 
-        let dateVersionRelease = this.state.dateVersionRelease;
-        for (let i in responseRelease) { 
-          let s3Path = responseRelease[i].s3Path;
-//           let time = responseRelease[i].releaseVersions[0].releaseDate;
-          let time = responseRelease[i].uploadDate;
-          let date = generateDateString(time);
-          let version = responseRelease[i].releaseVersions[0].releaseVersion;
-          for (let j in responseRelease[i].releaseVersions) { 	// could have multiple versions for a file, always use the oldest for Ranjana
-            if (responseRelease[i].releaseVersions[j].releaseVersion < version) {
-              version = responseRelease[i].releaseVersions[j].releaseVersion;
-            }
-          }
-//           console.log('s3Path ' + s3Path + ' date ' + date + ' version ' + version);	// s3Paths found
-//           let value  = date + '|' + version + '/' + release;
-          let value  = s3Path;
-//           let label  = date + ' (' + version + '/' + release + ')';
-          let label  = version + ' - ' + release + ' - ' + date;
-          dateVersionRelease[label] = value;
-        }
-        this.setState({ dateVersionRelease: dateVersionRelease });
-        this.setState({ numFmsUrlsQueried: this.state.numFmsUrlsQueried + 1 });
-        if (this.state.numFmsUrlsQueried >= this.state.numFmsUrlsToQuery) {
-          let versionReleaseHash = {};
-          Object.keys(dateVersionRelease).sort().reverse().forEach(function(label) {
-            // sort labels and process in reverse, to get most recent first
-            let value = dateVersionRelease[label] + '|' + label;
-            let matches  = label.match(/^(.*?) - (.*?) - (.*?)$/);
+          let arrayFiles = response.match(/gene-descriptions[^<]*?\/\d{8}\/[^<]*?\.json/g);
+          let modsHash = {};
+          let datesHash = {};
+          for (let i in arrayFiles) {
+            let fileLocation = arrayFiles[i];
+            let matches  = fileLocation.match(/gene-descriptions\/(.*?)\/\d{8}\/(\d{8})_([\w]*?)\.json/);
             let version  = matches[1];
-            let release  = matches[2];
-//             let date     = matches[3];
-//             console.log('creating dateOptions date ' + date + ' version ' + version + ' release ' + release5;
-            let versionRelease = version + ' - ' + release;
-            if ( (releaseLatest === 'true') && (versionRelease in versionReleaseHash) ) { return; }
-	      // if only want latest release and version-release has already been added, skip it
-            versionReleaseHash[versionRelease] = versionRelease;	// add versionRelease to dict of already added
+            let date     = matches[2];
+            let mod      = matches[3];
+            let value    = date + '|' + version;
+            datesHash[value] = value;
+            modsHash[mod] = mod;
+          }
+
+
+          let mods = Object.keys(modsHash);
+          let dateOptions = [];
+          Object.keys(datesHash).sort().forEach(function(key) {
+            let partsArray = key.split('|'), date = partsArray[0], version = partsArray[1];
+            let value    = date + '|' + version;
+            let label   = date + ' (' + version + ')';
             let option = renderOption(label, value);
-            let dateOptions = this.state.dateOptions;
-            dateOptions.push(option);					// add older version releases later in the list
-//             dateOptions = dateOptions.sort();			// remove, this doesn't do anything
-            let numDateOptions = dateOptions.length;
-            this.setState({ dateOptions: dateOptions });
-            this.setState({ numDateOptions: numDateOptions });
-          }.bind(this))
-          let dateObject = new Date();
-          let timeEndVersionsFetch = dateObject.getTime();
-          let diffTime = timeEndVersionsFetch - this.state.timeStartReleasesFetch;
-          console.log('time passed ' + diffTime + ' milliseconds');
-          this.setState({loadTimeMessage: this.state.loadTimeMessage + 'End loading at ' + dateObject + '.\n'});
-          this.setState({loadTimeMessage: this.state.loadTimeMessage + 'Time passed ' + diffTime + ' milliseconds.\n'});
+            dateOptions.unshift(option);
+          });
+          dateOptions = dateOptions.sort();
+
+          let optionMods = mods.map((mod) => <option key={mod} value={mod}>{mod}</option>);
+          this.setState({ optionMods: optionMods });
+          let numMods = mods.length;
+          this.setState({ numMods: numMods });
+          let diffFieldsHash = [];
+          diffFieldsHash['description'] = "Description (Full)";
+          diffFieldsHash['do_description'] = "DO Description";
+          diffFieldsHash['go_description'] = "GO Description";
+          diffFieldsHash['orthology_description'] = "Orthology Description";
+          diffFieldsHash['tissue_expression_description'] = "Expression Description";
+
+          this.setState({ diffFieldsHash: diffFieldsHash });
+          let diffFieldsArray = Object.keys(diffFieldsHash);
+          this.setState({ diffFieldsArray: diffFieldsArray });
+          let optionDiffFields = diffFieldsArray.map((diffField) => <option key={diffField} value={diffField}>{diffField}</option>);
+          this.setState({ optionDiffFields: optionDiffFields });
+          let numDiffFields = diffFieldsArray.length;
+          this.setState({ numDiffFields: numDiffFields });
+
+          let checkboxDiffFields = [];
+          for (let diffField in response.diffFields) { checkboxDiffFields[diffField] = true; }
+          this.setState({ checkboxDiffFields: checkboxDiffFields });
+
+          document.getElementById("mod").value = "";
           document.getElementById("date1").value = "";
           document.getElementById("date2").value = "";
           document.getElementById("dateDownload").value = "";
           document.getElementById("dateLoad").value = "";
-        }
-      });
-  } // getS3pathsFromFms(testOrLive)
+          document.getElementById("diffField").value = "";
+        })
+  }
 
-//   getS3pathIntoDateOptions(date, version, mod, test) {
-//     console.log('getS3path ' + version)
-//     let subdir = 'GENE-DESCRIPTION-JSON';
-//     let release = 'release';
-//     if (test === 'test') { 
-//       release = 'pre-release';
-//       subdir = 'GENE-DESCRIPTION-TEST-JSON'; }
-//     let urlFindLocation = 'https://fms.alliancegenome.org/api/datafile/by/' + version + '/' + subdir + '/' + mod + '?latest=true';
-//     fetch(urlFindLocation)
-//       .then(responseFindLocation => responseFindLocation.json())
-//       .then(responseFindLocation => {
-//         this.setState({numVersionsFetched: this.state.numVersionsFetched + 1});
-//         if (responseFindLocation[0] !== undefined) { 
-//           if (responseFindLocation[0].s3Path !== undefined) { 
-//             console.log('insidefound ' + responseFindLocation[0].s3Path); 
-//             let s3Path = responseFindLocation[0].s3Path;
-//             let value  = date + '|' + version + '/' + release;
-//             let label  = date + ' (' + version + '/' + release + ') path ' + s3Path;
-//             let option = renderOption(label, value);
-//             let dateOptions = this.state.dateOptions;
-//             dateOptions.unshift(option);
-//             dateOptions = dateOptions.sort();
-//             let numDateOptions = dateOptions.length;
-//             this.setState({ dateOptions: dateOptions });
-//             this.setState({ numDateOptions: numDateOptions });
-//           }
-//         }
-// // console.log(urlFindLocation + ' ' + this.state.numVersionsFetched + ' ? ' + this.state.numReleaseVersions);
-//         if (this.state.numVersionsFetched >= 2 * this.state.numReleaseVersions) {
-//           let dateObject = new Date();
-//           let timeEndVersionsFetch = dateObject.getTime();
-//           let diffTime = timeEndVersionsFetch - this.state.timeStartReleasesFetch;
-//           console.log('time passed ' + diffTime + ' milliseconds');
-//           this.setState({loadTimeMessage: this.state.loadTimeMessage + 'End loading at ' + dateObject + '.\n'});
-//           this.setState({loadTimeMessage: this.state.loadTimeMessage + 'Time passed ' + diffTime + ' milliseconds.\n'});
-//           document.getElementById("date1").value = "";
-//           document.getElementById("date2").value = "";
-//           document.getElementById("dateDownload").value = "";
-//           document.getElementById("dateLoad").value = "";
-//         }
-//       });
-//   } // getS3pathIntoDateOptions(date, version, mod, test)
+  setS3Paths(testOrLive, releaseLatest, mod) {
+    getS3PathsFromFms(testOrLive, releaseLatest, mod).then(paths => {
+      let s3FilePaths = this.state.s3FilePaths;
+      paths.forEach(path => s3FilePaths.push(path));
+      this.setState({s3FilePaths: s3FilePaths});
+      this.setState({numFmsUrlsQueried: this.state.numFmsUrlsQueried + 1});
+      if (this.state.numFmsUrlsQueried >= this.state.numFmsUrlsToQuery) {
+        let addedVersionRelease = new Set();
+        s3FilePaths.sort((path1, path2) => (path1.releaseVersion + ' - ' + path1.releaseType + ' - ' +
+            path1.uploadDate) < (path2.releaseVersion + ' - ' + path2.releaseType + ' - ' + path2.uploadDate) ? 1 : -1)
+            .forEach(path => {
+          // sort labels and process in reverse, to get most recent first
+          let versionRelease = path.releaseVersion + ' - ' + path.releaseType;
+          if ((releaseLatest === 'true') && (addedVersionRelease.has(versionRelease))) { return; }
+          addedVersionRelease.add(versionRelease);	// add versionRelease to set of already added
+          let option = renderOption(path.releaseVersion + ' - ' + path.releaseType + ' - ' + path.uploadDate,
+              path.s3Path);
+          let dateOptions = this.state.dateOptions;
+          dateOptions.push(option);					// add older version releases later in the list
+          let numDateOptions = dateOptions.length;
+          this.setState({dateOptions: dateOptions});
+          this.setState({numDateOptions: numDateOptions});
+        });
+        let dateObject = new Date();
+        let timeEndVersionsFetch = dateObject.getTime();
+        let diffTime = timeEndVersionsFetch - this.state.timeStartReleasesFetch;
+        console.log('time passed ' + diffTime + ' milliseconds');
+        this.setState({loadTimeMessage: this.state.loadTimeMessage + 'End loading at ' + dateObject + '.\n'});
+        this.setState({loadTimeMessage: this.state.loadTimeMessage + 'Time passed ' + diffTime + ' milliseconds.\n'});
+        document.getElementById("date1").value = "";
+        document.getElementById("date2").value = "";
+        document.getElementById("dateDownload").value = "";
+        document.getElementById("dateLoad").value = "";
+      }
+    });
+  }
 
   handleChange(event) {
     const target = event.target;
@@ -495,26 +249,24 @@ class ReportTool extends React.Component {
 
   handleChangeMod(mod) {
     this.setState({ numFmsUrlsQueried: 0 });
-    this.setState({ dateVersionRelease: {} });
+    this.setState({ s3FilePaths: [] });
     this.setState({ dateOptions: [] });
     this.setState({ numDateOptions: 0 });
     this.setState({ loadTimeMessage: ''});
-    this.getS3PathsFromFms('live', this.state.releaseLatest, mod);
-    this.getS3PathsFromFms('test', this.state.releaseLatest, mod);
+    this.setS3Paths('live', this.state.releaseLatest, mod);
+    this.setS3Paths('test', this.state.releaseLatest, mod);
     console.log('handleChangeMod update mod ' + this.state.mod);
   }
 
   handleChangeReleaseLatest(event) {
     this.handleChange(event);
-// don't know why this state value hasn't updated to the setState value, so need to pass event.target.value to getS3PathsFromFms
-// console.log('have failed to set releaseLatest ' + this.state.releaseLatest);	
     this.setState({ numFmsUrlsQueried: 0 });
-    this.setState({ dateVersionRelease: {} });
+    this.setState({ s3FilePaths: [] });
     this.setState({ dateOptions: [] });
     this.setState({ numDateOptions: 0 });
     this.setState({loadTimeMessage: ''});
-    this.getS3PathsFromFms('live', event.target.value, this.state.mod);
-    this.getS3PathsFromFms('test', event.target.value, this.state.mod);
+    this.setS3Paths('live', event.target.value, this.state.mod);
+    this.setS3Paths('test', event.target.value, this.state.mod);
     console.log('update release latest ' + this.state.releaseLatest);
   }
 
@@ -552,13 +304,6 @@ class ReportTool extends React.Component {
     let dateLoad     = matchesLoad[3];
     let urlLoad = generateFmsJsonUrl(selectedLoadValue, this.state.mod);
     console.log('load date ' + dateLoad + ' version ' + versionLoad + ' releaseLoad ' + releaseLoad);
-// UNDO FOR OLD WAY
-//     let urlLoad = generateJsonUrl(versionLoad, dateLoad, this.state.mod, this.state.baseUrl);
-// NEW SECTION
-//     let urlLoad = generateFmsJsonUrl(this.state.dateLoad, this.state.mod);
-
-//             let value = dateVersionRelease[label] + '|' + label;
-
     console.log('download ' + urlLoad);
     this.setState({showDivMenuButton2A: false});
     this.setState({showDivMenuButton2C: true});
@@ -567,11 +312,6 @@ class ReportTool extends React.Component {
     element.scrollIntoView();
     this.setState({showDivLoadLoading: true});
 
-// can no longer fetch, because some files are gzipped, need to user request and zlib
-//     fetch(urlLoad)
-//       .then(response => response.json())
-//       .then(response => { this.processDataLoad(response) }
-//     )
     this.requestAndGunzipBodyIfNecessary(urlLoad).then(res => this.processDataLoad(res));
 
   } // processSubmitLoadAction()
@@ -784,14 +524,6 @@ class ReportTool extends React.Component {
     if (this.state.dateDownload === undefined) { errorMessage += 'Choose a file\n';  }
     if (this.state.mod === undefined) { errorMessage += 'Choose a mod\n';  }
     if (errorMessage !== '') { alert(errorMessage); return; }
-// UNDO FOR OLD WAY
-//     let arrDateDownload = this.state.dateDownload.split('|');
-//     let dateDownload    = arrDateDownload[0];
-//     let versionDownload = arrDateDownload[1];
-//     let urlDownload = generateJsonUrl(versionDownload, dateDownload, this.state.mod, this.state.baseUrl);
-// NEW SECTION
-//     let urlDownload = generateFmsJsonUrl(this.state.dateDownload, this.state.mod);
-//     console.log('download ' + urlDownload);
     let arrDateDownload = this.state.dateDownload.split('|');
     let selectedDownloadValue   = arrDateDownload[0];
     let selectedDownloadLabel   = arrDateDownload[1];
@@ -812,10 +544,9 @@ class ReportTool extends React.Component {
     this.setState({backgroundDiffTab: '#ddd'});
     this.setState({backgroundDownloadTab: 'white'});
     this.setState({backgroundLoadTab: 'white'});
-//     var element = document.getElementById("anchor2Acontrol");
-//     element.scrollIntoView();
     event.preventDefault();
-  } // handleClickShowSectionDiff(event)
+  }
+
   handleClickShowSectionDownload(event) {
     console.log('click ' + event.target.value);
     this.setState({showDivDiffSection: false});
@@ -824,10 +555,9 @@ class ReportTool extends React.Component {
     this.setState({backgroundDiffTab: 'white'});
     this.setState({backgroundDownloadTab: '#ddd'});
     this.setState({backgroundLoadTab: 'white'});
-//     var element = document.getElementById("anchor2Bcontrol");
-//     element.scrollIntoView();
     event.preventDefault();
-  } // handleClickShowSectionDownload(event)
+  }
+
   handleClickShowSectionView(event) {
     console.log('click ' + event.target.value);
     this.setState({showDivDiffSection: false});
@@ -836,10 +566,8 @@ class ReportTool extends React.Component {
     this.setState({backgroundDiffTab: 'white'});
     this.setState({backgroundDownloadTab: 'white'});
     this.setState({backgroundLoadTab: '#ddd'});
-//     var element = document.getElementById("div_section_load");
-//     element.scrollIntoView();
     event.preventDefault();
-  } // handleClickShowSectionView(event)
+  }
 
   handleClickTopArrowButton(event) {
     console.log('click ' + event.target.value);
@@ -847,31 +575,22 @@ class ReportTool extends React.Component {
     element.scrollIntoView();
     this.setState({showDivDiffResult: false});
     this.setState({showDivLoadResult: false});
-//     this.setState({showDivTopArrowButton: false});
-//     this.setState({showDivMenuButton2A: false});
-//     this.setState({showDivMenuButton2C: false});
     event.preventDefault();
-  } // handleClickButton2A(event)
+  }
 
   handleClickButton2A(event) {
     console.log('click ' + event.target.value);
     var element = document.getElementById("anchor2Acontrol");
     element.scrollIntoView();
-//     this.setState({showDivTopArrowButton: false});
-//     this.setState({showDivMenuButton2A: false});
-//     this.setState({showDivMenuButton2C: false});
     event.preventDefault();
-  } // handleClickButton2A(event)
+  }
 
   handleClickButton2C(event) {
     console.log('click ' + event.target.value);
     var element = document.getElementById("anchor2Ccontrol");
     element.scrollIntoView();
-//     this.setState({showDivTopArrowButton: false});
-//     this.setState({showDivMenuButton2A: false});
-//     this.setState({showDivMenuButton2C: false});
     event.preventDefault();
-  } // handleClickButton2C(event)
+  }
 
   handleSubmitCompare(event) {
     let t0 = Date.now();
@@ -883,27 +602,6 @@ class ReportTool extends React.Component {
     if (this.state.diffField === undefined) { errorMessage += 'Choose a field to compare\n';  }
     if (this.state.mod === undefined) {       errorMessage += 'Choose a mod\n';               }
     if (errorMessage !== '') { alert(errorMessage); return; }
-
-//     console.log('this.state.date1 : ' + this.state.date1);
-//     let arrDate1 = this.state.date1.split('|');
-// //     let version1 = arrDate1[0];
-// //     let date1    = arrDate1[1];
-//     let date1    = arrDate1[0];
-//     let version1 = arrDate1[1];
-// // UNDO FOR OLD WAY
-// //     let url1     = generateJsonUrl(version1, date1, this.state.mod, this.state.baseUrl);
-// // NEW SECTION
-//     let url1 = generateFmsJsonUrl(date1, this.state.mod);
-//     let arrDate2 = this.state.date2.split('|');
-// //     let version2 = arrDate2[0];
-// //     let date2    = arrDate2[1];
-//     let date2    = arrDate2[0];
-//     let version2 = arrDate2[1];
-// // UNDO FOR OLD WAY
-// //     let url2     = generateJsonUrl(version2, date2, this.state.mod, this.state.baseUrl);
-// // NEW SECTION
-//     let url2 = generateFmsJsonUrl(date2, this.state.mod);
-
     let arrDate1 = this.state.date1.split('|');
     let selected1Value   = arrDate1[0];
     let selected1Label   = arrDate1[1];
@@ -936,16 +634,6 @@ class ReportTool extends React.Component {
     this.setState({showDivLoadResult: false});
     var element = document.getElementById("anchor2Aresult");
     element.scrollIntoView();
-
-// can no longer fetch, because some files are gzipped, need to user request and zlib
-//     fetch(url1)
-//       .then(response1 => response1.json())
-//       .then(response1 => {
-//           fetch(url2)
-//             .then(response2 => response2.json())
-//             .then(response2 => {
-//             });
-//       });
 
     this.requestAndGunzipBodyIfNecessary(url1).then((res1) => {
       this.requestAndGunzipBodyIfNecessary(url2).then((res2) => {
