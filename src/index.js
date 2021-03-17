@@ -136,15 +136,6 @@ class ReportTool extends React.Component {
             dates.add(date + '|' + version);
             addedMods.add(mod);
           })
-          let dateOptions = [];
-          [...dates].sort().forEach(dateVersion => {
-            let partsArray = dateVersion.split('|'), date = partsArray[0], version = partsArray[1];
-            let label   = date + ' (' + version + ')';
-            let option = renderOption(label, dateVersion);
-            dateOptions.unshift(option);
-          });
-          dateOptions = dateOptions.sort();
-
           let optionMods = [...addedMods].map(mod => <option key={mod} value={mod}>{mod}</option>);
           this.setState({ optionMods: optionMods });
           let checkboxDiffFields = [];
@@ -167,6 +158,7 @@ class ReportTool extends React.Component {
       this.setState({s3FilePaths: s3FilePaths});
       this.setState({numFmsUrlsQueried: this.state.numFmsUrlsQueried + 1});
       if (this.state.numFmsUrlsQueried >= this.state.numFmsUrlsToQuery) {
+        let dateOptions = this.state.dateOptions;
         let processedVersionRelease = new Set();
         s3FilePaths.sort((path1, path2) => (path1.releaseVersion + ' - ' + path1.releaseType + ' - ' +
             path1.uploadDate) < (path2.releaseVersion + ' - ' + path2.releaseType + ' - ' + path2.uploadDate) ? 1 : -1)
@@ -177,10 +169,9 @@ class ReportTool extends React.Component {
           processedVersionRelease.add(versionRelease);	// add versionRelease to set of already added
           let option = renderOption(path.releaseVersion + ' - ' + path.releaseType + ' - ' + path.uploadDate,
               path.s3Path);
-          let dateOptions = this.state.dateOptions;
           dateOptions.push(option);				// add older version releases later in the list
-          this.setState({dateOptions: dateOptions});
         });
+        this.setState({dateOptions: dateOptions});
         let dateObject = new Date();
         let timeEndVersionsFetch = dateObject.getTime();
         let diffTime = timeEndVersionsFetch - this.state.timeStartReleasesFetch;
