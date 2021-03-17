@@ -68,9 +68,6 @@ class ReportTool extends React.Component {
       loadGoidsCount: 0,
       optionMods: [],
       diffField: undefined,
-      optionDiffFields: [],
-      diffFieldsArray: [],
-      diffFieldsHash: [],
       dateOptions: [],
       loadFieldsMatchCount: [],
       showLabelFieldsMatchCount: [],
@@ -150,19 +147,6 @@ class ReportTool extends React.Component {
 
           let optionMods = [...addedMods].map(mod => <option key={mod} value={mod}>{mod}</option>);
           this.setState({ optionMods: optionMods });
-          let diffFieldsHash = [];
-          diffFieldsHash['description'] = "Description (Full)";
-          diffFieldsHash['do_description'] = "DO Description";
-          diffFieldsHash['go_description'] = "GO Description";
-          diffFieldsHash['orthology_description'] = "Orthology Description";
-          diffFieldsHash['tissue_expression_description'] = "Expression Description";
-
-          this.setState({ diffFieldsHash: diffFieldsHash });
-          let diffFieldsArray = Object.keys(diffFieldsHash);
-          this.setState({ diffFieldsArray: diffFieldsArray });
-          let optionDiffFields = diffFieldsArray.map((diffField) => <option key={diffField} value={diffField}>{diffField}</option>);
-          this.setState({ optionDiffFields: optionDiffFields });
-
           let checkboxDiffFields = [];
           for (let diffField in response.diffFields) { checkboxDiffFields[diffField] = true; }
           this.setState({ checkboxDiffFields: checkboxDiffFields });
@@ -194,7 +178,7 @@ class ReportTool extends React.Component {
           let option = renderOption(path.releaseVersion + ' - ' + path.releaseType + ' - ' + path.uploadDate,
               path.s3Path);
           let dateOptions = this.state.dateOptions;
-          dateOptions.push(option);					// add older version releases later in the list
+          dateOptions.push(option);				// add older version releases later in the list
           this.setState({dateOptions: dateOptions});
         });
         let dateObject = new Date();
@@ -311,11 +295,10 @@ class ReportTool extends React.Component {
           let matchCount = 0;
           let fieldsMatchCount = [];
           let showFieldsMatchCount = [];
-          for (let j in this.state.diffFieldsArray) {
-            let diffField = this.state.diffFieldsArray[j];
-            if (this.state.checkboxDiffFields[diffField] === true) { showFieldsMatchCount[diffField] = true; }
-              else { showFieldsMatchCount[diffField] = false; }
-            fieldsMatchCount[diffField] = 0; }
+          Object.keys(this.state.checkboxDiffFields).forEach(diffField => {
+            showFieldsMatchCount[diffField] = this.state.checkboxDiffFields[diffField] === true;
+            fieldsMatchCount[diffField] = 0;
+          });
           for (let field in response.general_stats) {
             if (field.match(/_with_null_/)) { continue; }
             let renamedField = field;
@@ -371,8 +354,7 @@ class ReportTool extends React.Component {
               || ( (this.state.loadComparisonGoids === '==') && 
                    (count_set_final_go_ids === this.state.loadGoidsCount) ) ) {
 
-              for (let j in this.state.diffFieldsArray) {
-                let diffField = this.state.diffFieldsArray[j];
+              Object.keys(this.state.checkboxDiffFields).forEach(diffField => {
                 let diffFieldValue = response.data[i][diffField] || '';
                 if (this.state.checkboxDiffFields[diffField] === true) {
                   if ( ( ( this.state.checkboxHasData ) && (diffFieldValue !== '') ) ||
@@ -421,7 +403,11 @@ class ReportTool extends React.Component {
                       if ( (matchCount > skipCount) && (matchCount <= doneCount) ) {
                         const item = {gene_id: gene_id, gene_name: gene_name, field: diffField, text: diffFieldValue};
                         tempRowsTableLoad.push(item);
-              } } } } }
+                      }
+                    }
+                  }
+                }
+              });
 
               if (geneHasSomeData) { matchCount++; }
 //                         loadFieldsMatchCount: [],
@@ -811,6 +797,12 @@ class ReportTool extends React.Component {
 
 
   render() {
+    const diffFields = {};
+    diffFields['description'] = "Description (Full)";
+    diffFields['do_description'] = "DO Description";
+    diffFields['go_description'] = "GO Description";
+    diffFields['orthology_description'] = "Orthology Description";
+    diffFields['tissue_expression_description'] = "Expression Description";
     return (
       <form>
         <div style={{display: this.state.showDivTopArrowButton ? 'block' : 'none', position: 'fixed', top: 25, right: 75}}><span style={{color: 'lime', fontSize: 30}} onClick={this.handleClickTopArrowButton}>&#8593;</span></div>
@@ -956,8 +948,8 @@ class ReportTool extends React.Component {
           </td><td style={{verticalAlign: 'top'}}>
           <label>
             Select field to compare:<br/>
-            <select name="diffField" id="diffField" size={this.state.diffFieldsArray.length}  onChange={this.handleChange}>
-              {this.state.optionDiffFields}
+            <select name="diffField" id="diffField" size={Object.keys(diffFields).length}  onChange={this.handleChange}>
+              {Object.values(diffFields).map((diffField) => <option key={diffField} value={diffField}>{diffField}</option>)}
             </select>
           </label>
           </td></tr>
@@ -1066,7 +1058,7 @@ Doesn't work cross origin (across domains)
           <label>
             Field counts: <br />
           </label>
-          {this.state.diffFieldsArray.map(function(item){
+          {Object.values(diffFields).map(function(item){
 //             let name = 'matchcount_' + item;
             let label_key = 'label_key_matchcount_' + item;
             return (
@@ -1126,7 +1118,7 @@ Doesn't work cross origin (across domains)
           <label>
             Which fields to display : <br />
           </label>
-          {this.state.diffFieldsArray.map(function(item){
+          {Object.keys(diffFields).map(function(item){
             let name = 'checkbox_' + item;
             let label_key = 'label_key_' + item;
             return (
@@ -1136,7 +1128,7 @@ Doesn't work cross origin (across domains)
                   type="checkbox"
                   checked={this.state.checkboxDiffFields[item]}
                   onChange={this.handleInputChangeCheckboxDiffFields} 
-                />{this.state.diffFieldsHash[item]}<br/>
+                />{diffFields[item]}<br/>
               </label>
             )}, this)}
           <br />
