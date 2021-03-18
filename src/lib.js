@@ -29,7 +29,7 @@ export function renderOption(label, value) {
 
 export function getHtmlVar() { return new URLSearchParams(window.location.search); }
 
-export const getS3PathsFromFms = (testOrLive, releaseLatest, mod) => {
+export const getS3PathsFromFms = (testOrLive, mod) => {
   return new Promise((resolve, reject) => {
     let urlRelease = 'https://fms.alliancegenome.org/api/datafile/by/GENE-DESCRIPTION-JSON/' + mod + '?latest=false';
     let releaseType = 'release/stage';
