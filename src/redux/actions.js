@@ -18,8 +18,8 @@ export const fetchModsList = () => {
         let response = await fetch(urlTemplate);
         let res = await response.text();
         let arrayFiles = res.match(/gene-descriptions[^<]*?\/\d{8}\/[^<]*?\.json/g);
-        dispatch(setModsList(arrayFiles.map(arrayFile =>
-            arrayFile.match(/gene-descriptions\/(.*?)\/\d{8}\/(\d{8})_([\w]*?)\.json/)[3])));
+        dispatch(setModsList([...new Set(arrayFiles.map(arrayFile =>
+            arrayFile.match(/gene-descriptions\/(.*?)\/\d{8}\/(\d{8})_([\w]*?)\.json/)[3]))]));
         let checkboxDiffFields = [];
         for (let diffField in res.diffFields) {
             checkboxDiffFields[diffField] = true;
