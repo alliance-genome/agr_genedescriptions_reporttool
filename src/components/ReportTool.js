@@ -2,10 +2,11 @@ import { connect } from 'react-redux'
 import '../index.css';
 import pako from 'pako';
 import axios from 'axios';
-import {generateFmsJsonUrl, getHtmlVar, getS3PathsFromFms} from "../lib";
+import {generateFmsJsonUrl, getHtmlVar} from "../lib";
 import React from 'react';
 import ModSelector from "./ModSelector";
-import {setModsList} from "../redux/actions";
+import {fetchFilesFromFMS, fetchModsList, setDiffFields, setModsList} from "../redux/actions";
+import {getDescriptionFileObjects, getDiffFields, getLatestFilesOnly, getSelectedMod} from "../redux/selectors";
 
 
 class ReportTool extends React.Component {
@@ -24,11 +25,7 @@ class ReportTool extends React.Component {
       releaseVersions: {},
       numReleaseVersions: 0,
       numVersionsFetched: 0,
-      timeStartReleasesFetch: 0,
-      loadTimeMessage: '',
       s3FilePaths: [],
-      numFmsUrlsQueried: 0,
-      numFmsUrlsToQuery: 2,
       rowsTableLoad: [],
       rowsTableLoadStats: [],
       rowsTableDiff: [],
@@ -68,10 +65,8 @@ class ReportTool extends React.Component {
       loadComparisonGoids: '>=',
       loadGoidsCount: 0,
       diffField: undefined,
-      descriptionFileObjects: [],
       loadFieldsMatchCount: [],
       showLabelFieldsMatchCount: [],
-      checkboxDiffFields: [],
       checkboxDescription: true,
       checkboxDoDescription: true,
       checkboxGoDescription: true,
@@ -100,98 +95,16 @@ class ReportTool extends React.Component {
   }
 
   componentDidMount() {
-    console.log('componentDidMount this.props.selectedMod ' + this.props.selectedMod);
-    let dateObject = new Date();
-    let timeStartReleasesFetch = dateObject.getTime();
-    this.setState({ timeStartReleasesFetch: timeStartReleasesFetch });
-    console.log( dateObject );
-    this.setState({loadTimeMessage: this.state.loadTimeMessage + 'Start loading at ' + dateObject + '.\n'});
-    console.log( timeStartReleasesFetch );
     if (this.props.selectedMod !== undefined) {
-      this.addFilesFromFMS('live', this.props.latestFilesOnly, this.props.selectedMod);
-      this.addFilesFromFMS('test', this.props.latestFilesOnly, this.props.selectedMod);
+      this.props.fetchFilesFromFMS(this.props.latestFilesOnly, this.props.selectedMod);
     }
-    this.setModListFromIndexFile();
+    this.props.fetchModsList();
   }
 
   componentDidUpdate(prevProps, prevState, snapshot) {
-    if (prevProps.selectedMod !== this.props.selectedMod) {
-      this.resetFileObjects();
-      this.addFilesFromFMS('live', this.props.latestFilesOnly, this.props.selectedMod);
-      this.addFilesFromFMS('test', this.props.latestFilesOnly, this.props.selectedMod);
-      console.log('handleChangeMod update mod ' + this.props.selectedMod);
-    } else if (prevProps.latestFilesOnly !== this.props.latestFilesOnly) {
-      this.resetFileObjects();
-      this.addFilesFromFMS('live', this.props.latestFilesOnly, this.props.selectedMod);
-      this.addFilesFromFMS('test', this.props.latestFilesOnly, this.props.selectedMod);
-      console.log('update release latest ' + this.props.latestFilesOnly);
+    if (prevProps.selectedMod !== this.props.selectedMod || prevProps.latestFilesOnly !== this.props.latestFilesOnly) {
+      this.props.fetchFilesFromFMS(this.props.latestFilesOnly, this.props.selectedMod);
     }
-  }
-
-  setModListFromIndexFile() {
-    let urlRoot = process.env.REACT_APP_URLROOT !== undefined ? process.env.REACT_APP_URLROOT :
-        'https://reports.alliancegenome.org/';
-    let urlTemplate = urlRoot;
-    if (urlRoot.match(/textpresso/)) { urlTemplate = urlRoot + 'index.xml'; }
-    fetch(urlTemplate)
-        .then(response => response.text())
-        .then(response => {
-          let arrayFiles = response.match(/gene-descriptions[^<]*?\/\d{8}\/[^<]*?\.json/g);
-          let addedMods = new Set();
-          let dates = new Set();
-          arrayFiles.forEach(arrayFile => {
-            let matches  = arrayFile.match(/gene-descriptions\/(.*?)\/\d{8}\/(\d{8})_([\w]*?)\.json/);
-            let version  = matches[1];
-            let date     = matches[2];
-            let mod      = matches[3];
-            dates.add(date + '|' + version);
-            addedMods.add(mod);
-          })
-          this.props.setModsList(addedMods);
-          let checkboxDiffFields = [];
-          for (let diffField in response.diffFields) { checkboxDiffFields[diffField] = true; }
-          this.setState({ checkboxDiffFields: checkboxDiffFields });
-
-          document.getElementById("mod").value = "";
-          document.getElementById("date1").value = "";
-          document.getElementById("date2").value = "";
-          document.getElementById("dateDownload").value = "";
-          document.getElementById("dateLoad").value = "";
-          document.getElementById("diffField").value = "";
-        })
-  }
-
-  addFilesFromFMS(testOrLive, releaseLatest, mod) {
-    getS3PathsFromFms(testOrLive, mod).then(paths => {
-      let s3FilePaths = this.state.s3FilePaths;
-      paths.forEach(path => s3FilePaths.push(path));
-      this.setState({s3FilePaths: s3FilePaths});
-      this.setState({numFmsUrlsQueried: this.state.numFmsUrlsQueried + 1});
-      if (this.state.numFmsUrlsQueried >= this.state.numFmsUrlsToQuery) {
-        let fileObjects = this.state.descriptionFileObjects;
-        let processedVersionRelease = new Set();
-        s3FilePaths.sort((path1, path2) => (path1.releaseVersion + ' - ' + path1.releaseType + ' - ' +
-            path1.uploadDate) < (path2.releaseVersion + ' - ' + path2.releaseType + ' - ' + path2.uploadDate) ? 1 : -1)
-            .forEach(path => {
-              // sort labels and process in reverse, to get most recent first
-              let versionRelease = path.releaseVersion + ' - ' + path.releaseType;
-              if (releaseLatest && processedVersionRelease.has(versionRelease)) { return; }
-              processedVersionRelease.add(versionRelease);	// add versionRelease to set of already added
-              fileObjects.push(path);
-            });
-        this.setState({descriptionFileObjects: fileObjects});
-        let dateObject = new Date();
-        let timeEndVersionsFetch = dateObject.getTime();
-        let diffTime = timeEndVersionsFetch - this.state.timeStartReleasesFetch;
-        console.log('time passed ' + diffTime + ' milliseconds');
-        this.setState({loadTimeMessage: this.state.loadTimeMessage + 'End loading at ' + dateObject + '.\n'});
-        this.setState({loadTimeMessage: this.state.loadTimeMessage + 'Time passed ' + diffTime + ' milliseconds.\n'});
-        document.getElementById("date1").value = "";
-        document.getElementById("date2").value = "";
-        document.getElementById("dateDownload").value = "";
-        document.getElementById("dateLoad").value = "";
-      }
-    });
   }
 
   handleChange(event) {
@@ -206,13 +119,6 @@ class ReportTool extends React.Component {
   handleChangePage(event) {
     this.handleChange(event);
     console.log('page ' + this.state.pageNumber + ' entriesPerPage ' + this.state.entriesPerPage);
-  }
-
-  resetFileObjects() {
-    this.setState({ numFmsUrlsQueried: 0 });
-    this.setState({ s3FilePaths: [] });
-    this.setState({ descriptionFileObjects: [] });
-    this.setState({ loadTimeMessage: ''});
   }
 
   requestAndGunzipBodyIfNecessary(url) {
@@ -264,8 +170,8 @@ class ReportTool extends React.Component {
     let matchCount = 0;
     let fieldsMatchCount = [];
     let showFieldsMatchCount = [];
-    Object.keys(this.state.checkboxDiffFields).forEach(diffField => {
-      showFieldsMatchCount[diffField] = this.state.checkboxDiffFields[diffField] === true;
+    Object.keys(this.props.diffFields).forEach(diffField => {
+      showFieldsMatchCount[diffField] = this.props.diffFields[diffField] === true;
       fieldsMatchCount[diffField] = 0;
     });
     for (let field in response.general_stats) {
@@ -323,9 +229,9 @@ class ReportTool extends React.Component {
           || ( (this.state.loadComparisonGoids === '==') &&
               (count_set_final_go_ids === this.state.loadGoidsCount) ) ) {
 
-        Object.keys(this.state.checkboxDiffFields).forEach(diffField => {
+        Object.keys(this.props.diffFields).forEach(diffField => {
           let diffFieldValue = response.data[i][diffField] || '';
-          if (this.state.checkboxDiffFields[diffField] === true) {
+          if (this.props.diffFields[diffField] === true) {
             if ( ( ( this.state.checkboxHasData ) && (diffFieldValue !== '') ) ||
                 ( ( this.state.checkboxHasNoData ) && (diffFieldValue === '') ) ) {
               let keywordPass = false;
@@ -713,13 +619,11 @@ class ReportTool extends React.Component {
     const target = event.target;
     const value = target.type === 'checkbox' ? target.checked : target.value;
     const name = target.name;
-    let checkboxDiffFieldsValue = this.state.checkboxDiffFields;
+    let checkboxDiffFieldsValue = this.props.diffFields;
     let checkboxFieldName = name.replace("checkbox_", "");
     let lowercaseCheckboxFieldName = checkboxFieldName.toLowerCase();
     checkboxDiffFieldsValue[lowercaseCheckboxFieldName] = value;
-    this.setState({
-      checkboxDiffFields: checkboxDiffFieldsValue
-    });
+    this.props.setDiffFields(checkboxDiffFieldsValue);
   }
 
 
@@ -737,11 +641,6 @@ class ReportTool extends React.Component {
           <div style={{display: this.state.showDivMenuButton2C ? 'block' : 'none', position: 'fixed', top: 25, right: 25}}><span style={{color: 'lime', fontSize: 30}} onClick={this.handleClickButton2C}>&#9776;</span></div>
 
           <ModSelector/>
-
-          <div id='div_section_display_load_time' style={{display: 'none'}}>
-            <label>{this.state.loadTimeMessage.split("\n").map((i,key) => { return <div key={key}>{i}</div>; })}
-            </label>
-          </div>
 
           <div id='div_section_select'>
             <label>
@@ -834,8 +733,8 @@ class ReportTool extends React.Component {
               <tr><td style={{verticalAlign: 'top'}}>
                 <label>
                   Select old file:<br/>
-                  <select name="date1" id="date1" size={this.state.descriptionFileObjects.length} onChange={(event) => this.setState({descriptionFileObj1: JSON.parse(event.target.value)})}>
-                    {this.state.descriptionFileObjects.map(fileObj =>
+                  <select name="date1" id="date1" size={this.props.descriptionFileObjects.length} onChange={(event) => this.setState({descriptionFileObj1: JSON.parse(event.target.value)})}>
+                    {this.props.descriptionFileObjects.map(fileObj =>
                         <option
                             key={fileObj.releaseVersion + ' - ' + fileObj.releaseType + ' - ' + fileObj.uploadDate}
                             value={JSON.stringify(fileObj)}>{fileObj.releaseVersion + ' - ' + fileObj.releaseType + ' - ' + fileObj.uploadDate}
@@ -845,8 +744,8 @@ class ReportTool extends React.Component {
               </td><td style={{verticalAlign: 'top'}}>
                 <label>
                   Select new file:<br/>
-                  <select name="date2" id="date2" size={this.state.descriptionFileObjects.length} onChange={(event) => this.setState({descriptionFileObj2: JSON.parse(event.target.value)})}>
-                    {this.state.descriptionFileObjects.map(fileObj =>
+                  <select name="date2" id="date2" size={this.props.descriptionFileObjects.length} onChange={(event) => this.setState({descriptionFileObj2: JSON.parse(event.target.value)})}>
+                    {this.props.descriptionFileObjects.map(fileObj =>
                         <option
                             key={fileObj.releaseVersion + ' - ' + fileObj.releaseType + ' - ' + fileObj.uploadDate}
                             value={JSON.stringify(fileObj)}>{fileObj.releaseVersion + ' - ' + fileObj.releaseType + ' - ' + fileObj.uploadDate}
@@ -913,8 +812,8 @@ class ReportTool extends React.Component {
             <h3>Download a file</h3>
             <label id='anchor2Bcontrol'>
               Select file to download:<br/>
-              <select name="dateDownload" id="dateDownload" size={this.state.descriptionFileObjects.length} onChange={(event) => this.setState({descriptionFileObj1: JSON.parse(event.target.value)})}>
-                {this.state.descriptionFileObjects.map(fileObj =>
+              <select name="dateDownload" id="dateDownload" size={this.props.descriptionFileObjects.length} onChange={(event) => this.setState({descriptionFileObj1: JSON.parse(event.target.value)})}>
+                {this.props.descriptionFileObjects.map(fileObj =>
                     <option
                         key={fileObj.releaseVersion + ' - ' + fileObj.releaseType + ' - ' + fileObj.uploadDate}
                         value={JSON.stringify(fileObj)}>{fileObj.releaseVersion + ' - ' + fileObj.releaseType + ' - ' + fileObj.uploadDate}
@@ -1020,8 +919,8 @@ Doesn't work cross origin (across domains)
 
             <label id='anchor2Ccontrol'>
               Select file to view:<br/>
-              <select name="dateLoad" id="dateLoad" size={this.state.descriptionFileObjects.length} onChange={(event) => this.setState({descriptionFileObj1: JSON.parse(event.target.value)})}>
-                {this.state.descriptionFileObjects.map(fileObj =>
+              <select name="dateLoad" id="dateLoad" size={this.props.descriptionFileObjects.length} onChange={(event) => this.setState({descriptionFileObj1: JSON.parse(event.target.value)})}>
+                {this.props.descriptionFileObjects.map(fileObj =>
                     <option
                         key={fileObj.releaseVersion + ' - ' + fileObj.releaseType + ' - ' + fileObj.uploadDate}
                         value={JSON.stringify(fileObj)}>{fileObj.releaseVersion + ' - ' + fileObj.releaseType + ' - ' + fileObj.uploadDate}
@@ -1042,7 +941,7 @@ Doesn't work cross origin (across domains)
                     <input
                         name={name}
                         type="checkbox"
-                        checked={this.state.checkboxDiffFields[item]}
+                        checked={this.props.diffFields[item]}
                         onChange={this.handleInputChangeCheckboxDiffFields}
                     />{diffFields[item]}<br/>
                   </label>
@@ -1166,11 +1065,11 @@ Doesn't work cross origin (across domains)
 
 } // class ReportTool extends React.Component
 
-const mapStateToProps = (state /*, ownProps*/) => {
-  return {
-    selectedMod: state.selectedMod,
-    latestFilesOnly: state.latestFilesOnly,
-  }
-}
+const mapStateToProps = state => ({
+  selectedMod: getSelectedMod(state),
+  latestFilesOnly: getLatestFilesOnly(state),
+  diffFields: getDiffFields(state),
+  descriptionFileObjects: getDescriptionFileObjects(state)
+});
 
-export default connect(mapStateToProps, {setModsList})(ReportTool)
+export default connect(mapStateToProps, {setModsList, setDiffFields, fetchModsList, fetchFilesFromFMS})(ReportTool)
