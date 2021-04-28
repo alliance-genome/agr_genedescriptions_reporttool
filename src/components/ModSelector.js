@@ -8,7 +8,7 @@ const ModSelector = (props) => {
         <div id='div_section_mod'>
             <label>
                 <h3>Select your Mod:</h3>
-                <select name="mod" id="mod" size={props.modsList.size} defaultValue=""
+                <select name="mod" id="mod" size={props.modsList.length} defaultValue=""
                         onChange={(event) => props.setSelectedMod(event.target.value)}>
                     {[...props.modsList].map(mod => <option key={mod} value={mod}>{mod}</option>)}
                 </select>
