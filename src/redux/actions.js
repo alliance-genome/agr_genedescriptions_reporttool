@@ -5,9 +5,10 @@ export const SET_MODS_LIST = "SET_MODS_LIST";
 export const SET_LATEST_FILES_ONLY = "SET_LATEST_FILES_ONLY";
 export const SET_DIFF_FIELDS = "SET_DIFF_FIELDS";
 export const SET_DESCRIPTION_FILE_OBJECTS = "SET_DESCRIPTION_FILE_OBJECTS";
+export const SET_DESCRIPTION_FILE_FOR_DIFF = "SET_DESCRIPTION_FILE_FOR_DIFF";
 
 
-export const fetchModsList = () => {
+export const fetchModsList = (selectedMod) => {
     return async dispatch => {
         let urlRoot = process.env.REACT_APP_URLROOT !== undefined ? process.env.REACT_APP_URLROOT :
             'https://reports.alliancegenome.org/';
@@ -18,8 +19,14 @@ export const fetchModsList = () => {
         let response = await fetch(urlTemplate);
         let res = await response.text();
         let arrayFiles = res.match(/gene-descriptions[^<]*?\/\d{8}\/[^<]*?\.json/g);
-        dispatch(setModsList([...new Set(arrayFiles.map(arrayFile =>
-            arrayFile.match(/gene-descriptions\/(.*?)\/\d{8}\/(\d{8})_([\w]*?)\.json/)[3]))]));
+        let mods = [...new Set(arrayFiles.map(arrayFile =>
+            arrayFile.match(/gene-descriptions\/(.*?)\/\d{8}\/(\d{8})_([\w]*?)\.json/)[3]))];
+        dispatch(setModsList(mods))
+        if (selectedMod !== null) {
+            dispatch(setSelectedMod(selectedMod));
+        } else {
+            dispatch(setSelectedMod(mods[0]))
+        }
         let checkboxDiffFields = [];
         for (let diffField in res.diffFields) {
             checkboxDiffFields[diffField] = true;
@@ -86,3 +93,11 @@ export const setDescriptionFileObjects = descriptionFileObjects => ({
         descriptionFileObjects
     }
 });
+
+export const setDescriptionFileForDiff = (fileObj, idx) => ({
+    type: SET_DESCRIPTION_FILE_FOR_DIFF,
+    payload: {
+        fileObj: fileObj,
+        idx: idx
+    }
+})

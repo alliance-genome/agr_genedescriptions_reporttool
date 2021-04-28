@@ -5,7 +5,8 @@ const initialState = {
     selectedMod: undefined,
     latestFilesOnly: true,
     diffFields: [],
-    descriptionFileObjects: []
+    descriptionFileObjects: [],
+    descriptionFilesForDiff: [undefined, undefined]
 };
 
 export default createReducer(initialState, {
@@ -17,9 +18,6 @@ export default createReducer(initialState, {
     SET_MODS_LIST: (state, action) => {
         if (action.payload.mods !== undefined) {
             state.modsList = [...action.payload.mods];
-            if (state.modsList.length > 0) {
-                state.selectedMod = state.modsList[0];
-            }
         }
     },
     SET_LATEST_FILES_ONLY: (state, action) => {
@@ -34,5 +32,8 @@ export default createReducer(initialState, {
     },
     SET_DESCRIPTION_FILE_OBJECTS: (state, action) => {
         state.descriptionFileObjects = action.payload.descriptionFileObjects;
+    },
+    SET_DESCRIPTION_FILE_FOR_DIFF: (state, action) => {
+        state.descriptionFilesForDiff[action.payload.idx] = action.payload.fileObj;
     }
 });

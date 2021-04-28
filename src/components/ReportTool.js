@@ -3,125 +3,79 @@ import '../index.css';
 import pako from 'pako';
 import axios from 'axios';
 import {generateFmsJsonUrl, getHtmlVar} from "../lib";
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import ModSelector from "./ModSelector";
-import {fetchFilesFromFMS, fetchModsList, setDiffFields, setModsList} from "../redux/actions";
-import {getDescriptionFileObjects, getDiffFields, getLatestFilesOnly, getSelectedMod} from "../redux/selectors";
+import {
+  fetchFilesFromFMS,
+  fetchModsList,
+  setDescriptionFileForDiff,
+  setDiffFields,
+  setModsList
+} from "../redux/actions";
+import {
+  getDescriptionFileObjects,
+  getDiffFields,
+  getDiffFileObjs,
+  getLatestFilesOnly,
+  getSelectedMod
+} from "../redux/selectors";
 
 
-class ReportTool extends React.Component {
-  constructor(props) {
-    super(props);
-    let queryMod = getHtmlVar().get('mod');
-    if (queryMod != null) {
-      console.log('constructor queryMod ' + queryMod);
-      this.props.setSelectedMod(queryMod);
+const ReportTool = (props) => {
+
+  const [pageNumber, setPageNumber] = useState(1);
+  const [diffField, setDiffField] = useState(undefined);
+  const [diffGeneNameFilter, setDiffGeneNameFilter] = useState('');
+  const [loadComparisonGoids, setLoadComparisonGoids] = useState('>=');
+  const [loadGoidsCount, setLoadGoidsCount] = useState(0);
+  const [checkboxHasData, setCheckboxHasData] = useState(true);
+  const [loadKeywordFilter, setLoadKeywordFilter] = useState('');
+  const [checkboxLoadKeywordFilter, setCheckboxLoadKeywordFilter] = useState(false)
+  const [loadGeneNameFilter, setLoadGeneNameFilter] = useState('');
+  const [checkboxLoadGeneNameFilter, setCheckboxLoadGeneNameFilter] = useState(false);
+  const [checkboxLoadGeneNameSubstring, setCheckboxLoadGeneNameSubstring] = useState(false);
+  const [loadOntologyFilter, setLoadOntologyFilter] = useState('');
+  const [textDivDiffResults, setTextDivDiffResults] = useState('');
+  const [diffKeywordFilter, setDiffKeywordFilter] = useState('');
+  const [checkboxDiffKeywordFilter, setCheckboxDiffKeywordFilter] = useState(false);
+  const [checkboxDiffGeneNameFilter, setCheckboxDiffGeneNameFilter] = useState(false);
+  const [checkboxDiffGeneNameSubstring, setCheckboxDiffGeneNameSubstring] = useState(false);
+  const [showDivTopArrowButton, setShowDivTopArrowButton] = useState(false);
+  const [showDivMenuButton2A, setShowDivMenuButton2A] = useState(false);
+  const [showDivMenuButton2C, setShowDivMenuButton2C] = useState(false);
+  const [backgroundDiffTab, setBackgroundDiffTab] = useState('white');
+  const [backgroundDownloadTab, setBackgroundDownloadTab] = useState('white');
+  const [backgroundLoadTab, setBackgroundLoadTab] = useState('white');
+  const [showDivDiffSection, setShowDivDiffSection] = useState(false);
+  const [showDivDiffLoading, setShowDivDiffLoading] = useState(false);
+  const [showDivDiffResult, setShowDivDiffResult] = useState(false);
+  const [rowsTableDiffStats, setRowsTableDiffStats] = useState([]);
+  const [rowsTableDiff, setRowsTableDiff] = useState([]);
+  const [showDivDownloadSection, setShowDivDownloadSection] = useState(false);
+  const [showDownloadLink, setShowDownloadLink] = useState(false);
+  const [downloadLinkUrl, setDownloadLinkUrl] = useState('');
+  const [downloadLinkText, setDownloadLinkText] = useState('');
+  const [showDivLoadSection, setShowDivLoadSection] = useState(false);
+  const [showDivLoadLoading, setShowDivLoadLoading] = useState(false);
+  const [showDivLoadResult, setShowDivLoadResult] = useState(false);
+  const [rowsTableLoadStats, setRowsTableLoadStats] = useState([]);
+  const [showLabelFieldsMatchCount, setShowLabelFieldsMatchCount] = useState(undefined);
+  const [loadFieldsMatchCount, setLoadFieldsMatchCount] = useState(undefined);
+  const [rowsTableLoad, setRowsTableLoad] = useState([]);
+  const [entriesPerPage, setEntriesPerPage] = useState(100);
+
+  useEffect(() => {
+    props.fetchModsList(getHtmlVar().get('mod'));
+  }, [])
+
+  useEffect(() => {
+    if (props.selectedMod) {
+      props.fetchFilesFromFMS(props.latestFilesOnly, props.selectedMod);
     }
+  }, [props.selectedMod]);
 
-    this.state = {
-      showDownloadLink: false,
-      downloadLinkText: 'linkText',
-      downloadLinkUrl: 'http://tazendra.caltech.edu/~azurebrd/cgi-bin/forms/agr/data/',
-      releaseVersions: {},
-      numReleaseVersions: 0,
-      numVersionsFetched: 0,
-      s3FilePaths: [],
-      rowsTableLoad: [],
-      rowsTableLoadStats: [],
-      rowsTableDiff: [],
-      rowsTableDiffStats: [],
-      showDivTopArrowButton: false,
-      showDivMenuButton2A: false,
-      showDivMenuButton2C: false,
-      backgroundDiffTab: 'white',
-      backgroundDownloadTab: 'white',
-      backgroundLoadTab: 'white',
-      showDivDiffSection: false,
-      showDivDownloadSection: false,
-      showDivLoadSection: true,
-      showDivDiffLoading: false,
-      showDivLoadLoading: false,
-      showDivLoadResult: false,
-      showDivDiffResult: false,
-      showDivDiffNavigation: false,
-      textDivDiffResults: '',
-      headerStatsDate1: 'date1',
-      headerStatsDate2: 'date2',
-      headerDiffDate1: 'date1',
-      headerDiffDate2: 'date2',
-      diffKeywordFilter: '',
-      diffGeneNameFilter: '',
-      loadOntologyFilter: '',
-      loadKeywordFilter: '',
-      loadGeneNameFilter: '',
-      checkboxDiffKeywordFilter: false,
-      checkboxDiffGeneNameFilter: false,
-      checkboxDiffGeneNameSubstring: false,
-      checkboxLoadKeywordFilter: false,
-      checkboxLoadGeneNameFilter: false,
-      checkboxLoadGeneNameSubstring: false,
-      entriesPerPage: 100,
-      pageNumber: 1,
-      loadComparisonGoids: '>=',
-      loadGoidsCount: 0,
-      diffField: undefined,
-      loadFieldsMatchCount: [],
-      showLabelFieldsMatchCount: [],
-      checkboxDescription: true,
-      checkboxDoDescription: true,
-      checkboxGoDescription: true,
-      checkboxOrthologyDescription: true,
-      checkboxHasData: true,
-      checkboxHasNoData: false
-    };
 
-    this.handleInputChange = this.handleInputChange.bind(this);
-    this.handleInputChangeCheckboxDiffFields = this.handleInputChangeCheckboxDiffFields.bind(this);
-    this.handleClickShowSectionDiff = this.handleClickShowSectionDiff.bind(this);
-    this.handleClickShowSectionDownload = this.handleClickShowSectionDownload.bind(this);
-    this.handleClickShowSectionView = this.handleClickShowSectionView.bind(this);
-    this.handleClickTopArrowButton = this.handleClickTopArrowButton.bind(this);
-    this.handleClickButton2A = this.handleClickButton2A.bind(this);
-    this.handleClickButton2C = this.handleClickButton2C.bind(this);
-    this.handleChange = this.handleChange.bind(this);
-    this.handleChangePage = this.handleChangePage.bind(this);
-    this.handleSubmitCompare = this.handleSubmitCompare.bind(this);
-    this.handleSubmitOpenTab = this.handleSubmitOpenTab.bind(this);
-    this.handleSubmitGenerateLink = this.handleSubmitGenerateLink.bind(this);
-    this.handleSubmitLoad = this.handleSubmitLoad.bind(this);
-    this.handleSubmitLoadNextPage = this.handleSubmitLoadNextPage.bind(this);
-    this.handleSubmitLoadPrevPage = this.handleSubmitLoadPrevPage.bind(this);
-    this.processSubmitLoadAction = this.processSubmitLoadAction.bind(this);
-  }
-
-  componentDidMount() {
-    if (this.props.selectedMod !== undefined) {
-      this.props.fetchFilesFromFMS(this.props.latestFilesOnly, this.props.selectedMod);
-    }
-    this.props.fetchModsList();
-  }
-
-  componentDidUpdate(prevProps, prevState, snapshot) {
-    if (prevProps.selectedMod !== this.props.selectedMod || prevProps.latestFilesOnly !== this.props.latestFilesOnly) {
-      this.props.fetchFilesFromFMS(this.props.latestFilesOnly, this.props.selectedMod);
-    }
-  }
-
-  handleChange(event) {
-    const target = event.target;
-    const name = target.name;
-    console.log('handleChange set ' + name + ' value ' + event.target.value);
-    this.setState({
-      [name]: event.target.value
-    });
-  }
-
-  handleChangePage(event) {
-    this.handleChange(event);
-    console.log('page ' + this.state.pageNumber + ' entriesPerPage ' + this.state.entriesPerPage);
-  }
-
-  requestAndGunzipBodyIfNecessary(url) {
+  const requestAndGunzipBodyIfNecessary = (url) => {
     return new Promise((resolve, reject) => {
       axios.get(url, { responseType: 'arraybuffer' })
           .then(function (response) {
@@ -137,41 +91,36 @@ class ReportTool extends React.Component {
     })
   }
 
-  processSubmitLoadAction() {
-    this.setState({showDivDiffResult: false});
-    this.setState({showDivTopArrowButton: false});
-    this.setState({showDivMenuButton2A: false});
-    this.setState({showDivMenuButton2C: false});
+  const processSubmitLoadAction = () => {
+    setShowDivDiffResult(false);
     let errorMessage = '';
-    if (this.state.descriptionFileObj1 === undefined) { errorMessage += 'Choose a file\n';  }
-    if (this.props.selectedMod === undefined) { errorMessage += 'Choose a mod\n';  }
+    if (props.descriptionFileObj1 === undefined) { errorMessage += 'Choose a file\n';  }
+    if (props.selectedMod === undefined) { errorMessage += 'Choose a mod\n';  }
     if (errorMessage !== '') { alert(errorMessage); return; }
-    let urlLoad = generateFmsJsonUrl(this.state.descriptionFileObj1.s3Path, this.props.selectedMod);
-    console.log('load date ' + this.state.descriptionFileObj1.uploadDate + ' version ' + this.state.descriptionFileObj1.releaseVersion + ' releaseLoad ' + this.state.descriptionFileObj1.releaseType);
-    console.log('download ' + urlLoad);
-    this.setState({showDivMenuButton2C: true});
-    this.setState({showDivTopArrowButton: true});
+    let urlLoad = generateFmsJsonUrl(props.diffFileObj1.s3Path, props.selectedMod);
+    setShowDivMenuButton2C(true);
+    setShowDivTopArrowButton(true);
     var element = document.getElementById("anchor2Cresult");
     element.scrollIntoView();
-    this.setState({showDivLoadLoading: true});
+    setShowDivLoadLoading(true);
 
-    this.requestAndGunzipBodyIfNecessary(urlLoad).then(res => this.processDataLoad(res));
+    requestAndGunzipBodyIfNecessary(urlLoad).then(res => processDataLoad(res));
 
   } // processSubmitLoadAction()
 
-  processDataLoad(response) {
+  const processDataLoad = (response) => {
     let tempRowsTableLoad = [];	// don't want to add each row one at a time and render it, add to this array and update all table rows at once
     let tempRowsTableStats = [];	// don't want to add each row one at a time and render it, add to this array and update all table rows at once
-    this.setState({ rowsTableLoad: [] });
-    this.setState({showDivLoadResult: true});
-    this.setState({showDivLoadLoading: false});
-    let skipCount = (this.state.pageNumber - 1) * this.state.entriesPerPage - 1;
-    let doneCount = this.state.pageNumber * this.state.entriesPerPage - 1;
+    setRowsTableLoad([]);
+    setShowDivLoadResult(true);
+    setShowDivLoadLoading(false);
+    let skipCount = (pageNumber - 1) * entriesPerPage - 1;
+    let doneCount = pageNumber * entriesPerPage - 1;
     let matchCount = 0;
     let fieldsMatchCount = [];
     let showFieldsMatchCount = [];
-    Object.keys(this.props.diffFields).forEach(diffField => {
-      showFieldsMatchCount[diffField] = this.props.diffFields[diffField] === true;
+    Object.keys(props.diffFields).forEach(diffField => {
+      showFieldsMatchCount[diffField] = props.diffFields[diffField] === true;
       fieldsMatchCount[diffField] = 0;
     });
     for (let field in response.general_stats) {
@@ -190,9 +139,7 @@ class ReportTool extends React.Component {
         tempRowsTableStats.push(item);
       }
     }
-    this.setState({
-      rowsTableLoadStats: tempRowsTableStats
-    });
+    setRowsTableLoadStats(tempRowsTableStats);
 
     for (let i in response.data) {
       let gene_id = response.data[i].gene_id;
@@ -222,52 +169,52 @@ class ReportTool extends React.Component {
         for (let j in response.data[i].stats.set_final_expression_ids) {
           gene_ontology_ids.push(response.data[i].stats.set_final_expression_ids[j]); } }
 
-      if ( ( (this.state.loadComparisonGoids === '>=') &&
-          (count_set_final_go_ids >= this.state.loadGoidsCount) )
-          || ( (this.state.loadComparisonGoids === '<=') &&
-              (count_set_final_go_ids <= this.state.loadGoidsCount) )
-          || ( (this.state.loadComparisonGoids === '==') &&
-              (count_set_final_go_ids === this.state.loadGoidsCount) ) ) {
+      if ( ( (loadComparisonGoids === '>=') &&
+          (count_set_final_go_ids >= loadGoidsCount) )
+          || ( (loadComparisonGoids === '<=') &&
+              (count_set_final_go_ids <= loadGoidsCount) )
+          || ( (loadComparisonGoids === '==') &&
+              (count_set_final_go_ids === loadGoidsCount) ) ) {
 
-        Object.keys(this.props.diffFields).forEach(diffField => {
+        Object.keys(props.diffFields).forEach(diffField => {
           let diffFieldValue = response.data[i][diffField] || '';
-          if (this.props.diffFields[diffField] === true) {
-            if ( ( ( this.state.checkboxHasData ) && (diffFieldValue !== '') ) ||
-                ( ( this.state.checkboxHasNoData ) && (diffFieldValue === '') ) ) {
+          if (props.diffFields[diffField] === true) {
+            if ( ( ( checkboxHasData ) && (diffFieldValue !== '') ) ||
+                ( ( !checkboxHasData ) && (diffFieldValue === '') ) ) {
               let keywordPass = false;
               let genenamePass = false;
               let ontologyPass = false;
-              if (this.state.loadKeywordFilter === '') { keywordPass = true; }
+              if (loadKeywordFilter === '') { keywordPass = true; }
               else {
-                let lines = this.state.loadKeywordFilter.split("\n");
+                let lines = loadKeywordFilter.split("\n");
                 for (let k in lines) {
-                  if (this.state.checkboxLoadKeywordFilter === false) {
+                  if (checkboxLoadKeywordFilter === false) {
                     if (diffFieldValue.toUpperCase().includes(lines[k].toUpperCase())) {
                       keywordPass = true; } }
                   else {
                     if (diffFieldValue.includes(lines[k])) {
                       keywordPass = true; } } } }
-              if (this.state.loadGeneNameFilter === '') { genenamePass = true; }
+              if (loadGeneNameFilter === '') { genenamePass = true; }
               else {
-                let lines = this.state.loadGeneNameFilter.split("\n");
+                let lines = loadGeneNameFilter.split("\n");
                 for (let k in lines) {
-                  if (this.state.checkboxLoadGeneNameSubstring === true) {	// substring search
-                    if (this.state.checkboxLoadGeneNameFilter === false) {	// not case sensitive
+                  if (checkboxLoadGeneNameSubstring === true) {	// substring search
+                    if (checkboxLoadGeneNameFilter === false) {	// not case sensitive
                       if (gene_name.toUpperCase().includes(lines[k].toUpperCase())) {
                         genenamePass = true; } }
                     else {							// case sensitive
                       if (gene_name.includes(lines[k])) {
                         genenamePass = true; } } }
                   else {							// exact match search
-                    if (this.state.checkboxLoadGeneNameFilter === false) {	// not case sensitive
+                    if (checkboxLoadGeneNameFilter === false) {	// not case sensitive
                       if (gene_name.toUpperCase() === lines[k].toUpperCase()) {
                         genenamePass = true; } }
                     else {							// case sensitive
                       if (gene_name === lines[k]) {
                         genenamePass = true; } } } } }
-              if (this.state.loadOntologyFilter === '') { ontologyPass = true; }
+              if (loadOntologyFilter === '') { ontologyPass = true; }
               else {
-                let lines = this.state.loadOntologyFilter.split("\n");
+                let lines = loadOntologyFilter.split("\n");
                 for (let k in lines) {
                   for (let l in gene_ontology_ids) {
                     if (lines[k].toUpperCase() === gene_ontology_ids[l].toUpperCase()) { ontologyPass = true; } }
@@ -285,175 +232,152 @@ class ReportTool extends React.Component {
         });
 
         if (geneHasSomeData) { matchCount++; }
-//                         loadFieldsMatchCount: [],
-//               if (matchCount > doneCount) { break; }			// to process entries only until desired amount, Ranjana wants to always process everything to get counts
       }
     }
-    this.setState({ rowsTableLoad: tempRowsTableLoad });
-    this.setState({ loadFieldsMatchCount: fieldsMatchCount });
-    this.setState({ showLabelFieldsMatchCount: showFieldsMatchCount });
+    setRowsTableLoad(tempRowsTableLoad);
+    setLoadFieldsMatchCount(fieldsMatchCount);
+    setShowLabelFieldsMatchCount(showFieldsMatchCount);
   } // processDataLoad()
 
-  handleSubmitLoadNextPage(event) {
+  const handleSubmitLoadNextPage = (event) => {
     event.preventDefault();
-    console.log('next page');
-    let nextPage = this.state.pageNumber + 1;
-    this.setState({pageNumber: nextPage});
-    this.processSubmitLoadAction();
+    let nextPage = pageNumber + 1;
+    setPageNumber(nextPage);
+    processSubmitLoadAction();
   }
 
-  handleSubmitLoadPrevPage(event) {
+  const handleSubmitLoadPrevPage = (event) => {
     event.preventDefault();
-    console.log('prev page');
-    let prevPage = this.state.pageNumber - 1;
+    let prevPage = pageNumber - 1;
     if (prevPage < 1) { prevPage = 1; }
-    this.setState({pageNumber: prevPage});
-    this.processSubmitLoadAction();
+    setPageNumber(prevPage);
+    processSubmitLoadAction();
   }
 
-  handleSubmitLoad(event) {
+  const handleSubmitLoad = (event) => {
     event.preventDefault();
-    console.log('submit ' + event.target.value);
-    this.processSubmitLoadAction();
+    processSubmitLoadAction();
   }
 
 
-  handleSubmitGenerateLink(event) {
+  const handleSubmitGenerateLink = (event) => {
     event.preventDefault();
-    console.log('submit ' + event.target.value);
     let errorMessage = '';
-    if (this.state.descriptionFileObj1 === undefined) { errorMessage += 'Choose a file\n';  }
-    if (this.props.selectedMod === undefined) { errorMessage += 'Choose a mod\n';  }
+    if (props.diffFileObj1 === undefined) { errorMessage += 'Choose a file\n';  }
+    if (props.selectedMod === undefined) { errorMessage += 'Choose a mod\n';  }
     if (errorMessage !== '') { alert(errorMessage); return; }
-    let urlDownload = generateFmsJsonUrl(this.state.descriptionFileObj1.s3Path, this.props.selectedMod);
-    console.log('download date ' + this.state.descriptionFileObj1.uploadDate + ' version ' + this.state.descriptionFileObj1.releaseVersion + ' releaseDownload ' + this.state.descriptionFileObj1.releaseType);
+    let urlDownload = generateFmsJsonUrl(props.diffFileObj1.s3Path, props.selectedMod);
 
-    let filename = this.state.descriptionFileObj1.uploadDate + '_' + this.props.selectedMod + '.json';
+    let filename = props.diffFileObj1.uploadDate + '_' + props.selectedMod + '.json';
     let downloadLink = document.createElement("a");
     downloadLink.setAttribute( 'href', urlDownload );
     downloadLink.setAttribute( 'target', '_blank' );
     downloadLink.setAttribute( 'download', filename );
     let downloadText = 'download ' + filename;
     downloadLink.innerHTML = downloadText;
-    this.setState({downloadLinkUrl: urlDownload});
+    setDownloadLinkUrl(urlDownload);
 
     downloadText = urlDownload;
 
-    this.setState({downloadLinkText: downloadText});
-    this.setState({showDownloadLink: true});
+    setDownloadLinkText(downloadText);
+    setShowDownloadLink(true);
   }
 
-  handleSubmitOpenTab(event) {
+  const handleSubmitOpenTab = (event) => {
     event.preventDefault();
-    console.log('submit ' + event.target.value);
     let errorMessage = '';
-    if (this.state.descriptionFileObj1 === undefined) { errorMessage += 'Choose a file\n';  }
-    if (this.props.selectedMod === undefined) { errorMessage += 'Choose a mod\n';  }
+    if (props.diffFileObj1 === undefined) { errorMessage += 'Choose a file\n';  }
+    if (props.selectedMod === undefined) { errorMessage += 'Choose a mod\n';  }
     if (errorMessage !== '') { alert(errorMessage); return; }
-    let urlDownload = generateFmsJsonUrl(this.state.descriptionFileObj1.s3Path, this.props.selectedMod);
-    console.log('download date ' + this.state.descriptionFileObj1.uploadDate + ' version ' + this.state.descriptionFileObj1.releaseVersion + ' releaseDownload ' + this.state.descriptionFileObj1.releaseType);
+    let urlDownload = generateFmsJsonUrl(props.diffFileObj1.s3Path, props.selectedMod);
     window.open(urlDownload);
   }
 
-  handleClickShowSectionDiff(event) {
-    console.log('click ' + event.target.value);
-    this.setState({showDivDiffSection: true});
-    this.setState({showDivDownloadSection: false});
-    this.setState({showDivLoadSection: false});
-    this.setState({backgroundDiffTab: '#ddd'});
-    this.setState({backgroundDownloadTab: 'white'});
-    this.setState({backgroundLoadTab: 'white'});
+  const handleClickShowSectionDiff = (event) => {
+    setShowDivDiffSection(true);
+    setShowDivDownloadSection(false);
+    setShowDivLoadSection(false);
+    setBackgroundDiffTab('#ddd');
+    setBackgroundDownloadTab('white');
+    setBackgroundLoadTab('white');
     event.preventDefault();
   }
 
-  handleClickShowSectionDownload(event) {
-    console.log('click ' + event.target.value);
-    this.setState({showDivDiffSection: false});
-    this.setState({showDivDownloadSection: true});
-    this.setState({showDivLoadSection: false});
-    this.setState({backgroundDiffTab: 'white'});
-    this.setState({backgroundDownloadTab: '#ddd'});
-    this.setState({backgroundLoadTab: 'white'});
+  const handleClickShowSectionDownload = (event) => {
+    setShowDivDiffSection(false);
+    setShowDivDownloadSection(true);
+    setShowDivLoadSection(false);
+    setBackgroundDiffTab('white');
+    setBackgroundDownloadTab('#ddd');
+    setBackgroundLoadTab('white');
     event.preventDefault();
   }
 
-  handleClickShowSectionView(event) {
-    console.log('click ' + event.target.value);
-    this.setState({showDivDiffSection: false});
-    this.setState({showDivDownloadSection: false});
-    this.setState({showDivLoadSection: true});
-    this.setState({backgroundDiffTab: 'white'});
-    this.setState({backgroundDownloadTab: 'white'});
-    this.setState({backgroundLoadTab: '#ddd'});
+  const handleClickShowSectionView = (event) => {
+    setShowDivDiffSection(false);
+    setShowDivDownloadSection(false);
+    setShowDivLoadSection(true);
+    setBackgroundDiffTab('white');
+    setBackgroundDownloadTab('white');
+    setBackgroundLoadTab('#ddd');
     event.preventDefault();
   }
 
-  handleClickTopArrowButton(event) {
-    console.log('click ' + event.target.value);
+  const handleClickTopArrowButton = (event) => {
     var element = document.getElementById("div_section_mod");
     element.scrollIntoView();
-    this.setState({showDivDiffResult: false});
-    this.setState({showDivLoadResult: false});
+    setShowDivDiffResult(false);
+    setShowDivLoadResult(false);
     event.preventDefault();
   }
 
-  handleClickButton2A(event) {
-    console.log('click ' + event.target.value);
+  const handleClickButton2A = (event) => {
     var element = document.getElementById("anchor2Acontrol");
     element.scrollIntoView();
     event.preventDefault();
   }
 
-  handleClickButton2C(event) {
-    console.log('click ' + event.target.value);
+  const handleClickButton2C = (event) => {
     var element = document.getElementById("anchor2Ccontrol");
     element.scrollIntoView();
     event.preventDefault();
   }
 
-  handleSubmitCompare(event) {
+  const handleSubmitCompare = (event) => {
     let t0 = Date.now();
-    console.log('submit ' + event.target.value);
     event.preventDefault();
     let errorMessage = '';
-    if (this.state.descriptionFileObj1 === undefined) {     errorMessage += 'Choose an old file\n';         }
-    if (this.state.descriptionFileObj2 === undefined) {     errorMessage += 'Choose a new file\n';          }
-    if (this.state.diffField === undefined) { errorMessage += 'Choose a field to compare\n';  }
-    if (this.props.selectedMod === undefined) {       errorMessage += 'Choose a mod\n';               }
+    if (props.diffFileObj1 === undefined) {     errorMessage += 'Choose an old file\n';         }
+    if (props.diffFileObj2 === undefined) {     errorMessage += 'Choose a new file\n';          }
+    if (diffField === undefined) { errorMessage += 'Choose a field to compare\n';  }
+    if (props.selectedMod === undefined) {       errorMessage += 'Choose a mod\n';               }
     if (errorMessage !== '') { alert(errorMessage); return; }
-    let url1 = generateFmsJsonUrl(this.state.descriptionFileObj1.s3Path, this.props.selectedMod);
-    console.log('diff 1 date ' + this.state.descriptionFileObj1.uploadDate + ' version ' + this.state.descriptionFileObj1.releaseVersion + ' release1 ' + this.state.descriptionFileObj1.releaseType);
-    let url2 = generateFmsJsonUrl(this.state.descriptionFileObj2.s3Path, this.props.selectedMod);
-    console.log('diff 2 date ' + this.state.descriptionFileObj2.uploadDate + ' version ' + this.state.descriptionFileObj2.releaseVersion + ' release1 ' + this.state.descriptionFileObj2.releaseType);
-    this.setState({headerStatsDate1: this.state.descriptionFileObj1.uploadDate});
-    this.setState({headerStatsDate2: this.state.descriptionFileObj2.uploadDate});
-    this.setState({headerDiffDate1: this.state.descriptionFileObj1.uploadDate});
-    this.setState({headerDiffDate2: this.state.descriptionFileObj2.uploadDate});
-    this.setState({showDivDiffLoading: true});
-    this.setState({showDivDiffNavigation: true});
-    this.setState({showDivMenuButton2A: true});
-    this.setState({showDivMenuButton2C: false});
-    this.setState({showDivTopArrowButton: true});
-    this.setState({showDivLoadResult: false});
+    let url1 = generateFmsJsonUrl(props.diffFileObj1.s3Path, props.selectedMod);
+    let url2 = generateFmsJsonUrl(props.diffFileObj2.s3Path, props.selectedMod);
+    setShowDivDiffLoading(true);
+    setShowDivMenuButton2A(true);
+    setShowDivMenuButton2C(false);
+    setShowDivTopArrowButton(true);
+    setShowDivLoadResult(false);
     var element = document.getElementById("anchor2Aresult");
     element.scrollIntoView();
 
-    this.requestAndGunzipBodyIfNecessary(url1).then((res1) => {
-      this.requestAndGunzipBodyIfNecessary(url2).then((res2) => {
-        this.processDataCompare(res1, res2, t0);
+    requestAndGunzipBodyIfNecessary(url1).then((res1) => {
+      requestAndGunzipBodyIfNecessary(url2).then((res2) => {
+        processDataCompare(res1, res2, t0);
       })
     });
 
   } // handleSubmitCompare(event)
 
 
-  processDataCompare(response1, response2, t0) {
+  const processDataCompare = (response1, response2, t0) => {
     let tempRowsTableDiff = [];	// don't want to add each row one at a time and render it, add to this array and update all table rows at once
     let tempRowsTableStats = [];	// don't want to add each row one at a time and render it, add to this array and update all table rows at once
-    this.setState({showDivDiffResult: true});
-    this.setState({showDivDiffLoading: false});
-    this.setState({ rowsTableDiffStats: [] });
-    this.setState({ rowsTableDiff: [] });
+    setShowDivDiffResult(true);
+    setShowDivDiffLoading(false);
+    setRowsTableDiffStats([]);
+    setRowsTableDiff([]);
 
     for (let field in response1.general_stats) {
       if (field.match(/_with_null_/)) { continue; }
@@ -476,10 +400,7 @@ class ReportTool extends React.Component {
         tempRowsTableStats.push(item);
       }
     }
-    this.setState({
-      rowsTableDiffStats: tempRowsTableStats
-    });
-
+    setRowsTableDiffStats(tempRowsTableStats);
     let maps = {};
     maps['file1'] = {};
     maps['file2'] = {};
@@ -492,14 +413,14 @@ class ReportTool extends React.Component {
       maps['file2'][gene] = {};
       maps['file2'][gene]['index'] = index; }
 
-    this.setState({textDivDiffResults: ""});
+    setTextDivDiffResults("");
     let createdGenes = {};
     createdGenes['text'] = [];
     createdGenes['null'] = [];
     for (let gene in maps.file2) {
       if (maps['file1'][gene] === undefined) {
         let index2 = maps['file2'][gene]['index'];
-        let desc2 = response2['data'][index2][this.state.diffField];
+        let desc2 = response2['data'][index2][diffField];
         if (desc2 === null || desc2 === undefined) { createdGenes['null'].push(gene); }
         else { createdGenes['text'].push(gene); } } }
     let createdGenesText = 'None';
@@ -508,8 +429,8 @@ class ReportTool extends React.Component {
       createdGenesText = createdGenes['text'].join(', '); }
     if (!(createdGenes['null'] === undefined || createdGenes['null'].length === 0)) {
       createdGenesNull = createdGenes['null'].join(', '); }
-    this.setState({textDivDiffResults: this.state.textDivDiffResults.concat("Created Genes with Text in description:\n" + createdGenesText + "\n\n")});
-    this.setState({textDivDiffResults: this.state.textDivDiffResults.concat("Created Genes with Null in description:\n" + createdGenesNull + "\n\n")});
+    setTextDivDiffResults(textDivDiffResults.concat("Created Genes with Text in description:\n" + createdGenesText + "\n\n"));
+    setTextDivDiffResults(textDivDiffResults.concat("Created Genes with Null in description:\n" + createdGenesNull + "\n\n"));
 
     let removedGenes = {};
     removedGenes['text'] = [];
@@ -517,7 +438,7 @@ class ReportTool extends React.Component {
     for (let gene in maps.file1) {
       if (maps['file2'][gene] === undefined) {
         let index1 = maps['file1'][gene]['index'];
-        let desc1 = response1['data'][index1][this.state.diffField];
+        let desc1 = response1['data'][index1][diffField];
         if (desc1 === null || desc1 === undefined) { removedGenes['null'].push(gene); }
         else { removedGenes['text'].push(gene); } } }
     let removedGenesText = 'None';
@@ -526,14 +447,14 @@ class ReportTool extends React.Component {
       removedGenesText = removedGenes['text'].join(', '); }
     if (!(removedGenes['null'] === undefined || removedGenes['null'].length === 0)) {
       removedGenesNull = removedGenes['null'].join(', '); }
-    this.setState({textDivDiffResults: this.state.textDivDiffResults.concat("Removed Genes with Text in description:\n" + removedGenesText + "\n\n")});
-    this.setState({textDivDiffResults: this.state.textDivDiffResults.concat("Removed Genes with Null in description:\n" + removedGenesNull + "\n\n")});
+    setTextDivDiffResults(textDivDiffResults.concat("Removed Genes with Text in description:\n" + removedGenesText + "\n\n"));
+    setTextDivDiffResults(textDivDiffResults.concat("Removed Genes with Null in description:\n" + removedGenesNull + "\n\n"));
 
-    if (this.state.diffKeywordFilter !== '') {
-      this.setState({textDivDiffResults: this.state.textDivDiffResults.concat("Filtering on keyword " + this.state.diffKeywordFilter + "\n\n")});
+    if (diffKeywordFilter !== '') {
+      setTextDivDiffResults(textDivDiffResults.concat("Filtering on keyword " + diffKeywordFilter + "\n\n"));
     }
     else {
-      this.setState({textDivDiffResults: this.state.textDivDiffResults.concat("Not filtering on a keyword\n\n")});
+      setTextDivDiffResults(textDivDiffResults.concat("Not filtering on a keyword\n\n"));
     }
 
     let countDifferencesInDescription = 0;
@@ -542,21 +463,21 @@ class ReportTool extends React.Component {
       let name1 = response1['data'][index1]['gene_name'];
       let desc1 = '';
       let desc2 = '';
-      if (response1['data'][index1][this.state.diffField] !== undefined) {
-        if (response1['data'][index1][this.state.diffField] !== null) {
-          desc1 = response1['data'][index1][this.state.diffField]; } }
+      if (response1['data'][index1][diffField] !== undefined) {
+        if (response1['data'][index1][diffField] !== null) {
+          desc1 = response1['data'][index1][diffField]; } }
       if (!(maps['file2'][gene] === undefined)) {
         let index2 = maps['file2'][gene]['index'];
-        if (response2['data'][index2][this.state.diffField] !== undefined) {
-          if (response2['data'][index2][this.state.diffField] !== null) {
-            desc2 = response2['data'][index2][this.state.diffField]; } } }
+        if (response2['data'][index2][diffField] !== undefined) {
+          if (response2['data'][index2][diffField] !== null) {
+            desc2 = response2['data'][index2][diffField]; } } }
 
       if ((desc1 !== desc2) && ((desc2 !== '') || (desc1 !== ''))) {
         let keywordPass = false;
         let genenamePass = false;
-        let lines = this.state.diffKeywordFilter.split("\n");
+        let lines = diffKeywordFilter.split("\n");
         for (let k in lines) {
-          if (this.state.checkboxDiffKeywordFilter === false) {
+          if (checkboxDiffKeywordFilter === false) {
             if (desc1.toUpperCase().includes(lines[k].toUpperCase()) ||
                 desc2.toUpperCase().includes(lines[k].toUpperCase())) {
               keywordPass = true; } }
@@ -565,19 +486,19 @@ class ReportTool extends React.Component {
                 desc2.includes(lines[k])) {
               keywordPass = true; } } }
 
-        if (this.state.diffGeneNameFilter === '') { genenamePass = true; }
+        if (diffGeneNameFilter === '') { genenamePass = true; }
         else {
-          lines = this.state.diffGeneNameFilter.split("\n");
+          lines = diffGeneNameFilter.split("\n");
           for (let k in lines) {
-            if (this.state.checkboxDiffGeneNameSubstring === true) {	// substring search
-              if (this.state.checkboxDiffGeneNameFilter === false) {	// not case sensitive
+            if (checkboxDiffGeneNameSubstring === true) {	// substring search
+              if (checkboxDiffGeneNameFilter === false) {	// not case sensitive
                 if (name1.toUpperCase().includes(lines[k].toUpperCase())) {
                   genenamePass = true; } }
               else {							// case sensitive
                 if (name1.includes(lines[k])) {
                   genenamePass = true; } } }
             else {
-              if (this.state.checkboxDiffGeneNameFilter === false) {	// exact match
+              if (checkboxDiffGeneNameFilter === false) {	// exact match
                 if (name1.toUpperCase() === lines[k].toUpperCase()) {	// not case sensitive
                   genenamePass = true; } }
               else {							// case sensitive
@@ -592,484 +513,470 @@ class ReportTool extends React.Component {
       }
     }
 
-    this.setState({textDivDiffResults: this.state.textDivDiffResults.concat("Count of differences in description: " + countDifferencesInDescription + "\n\n")});
+    setTextDivDiffResults(textDivDiffResults.concat("Count of differences in description: " + countDifferencesInDescription + "\n\n"));
 
-    this.setState({
-      rowsTableDiff: tempRowsTableDiff
-    });
+    setRowsTableDiff(tempRowsTableDiff);
 // this doesn't work, it tells the execution time before the requests return and process
     let t1 = Date.now();
-    console.log('Render took', t1-t0, 'ms');
   } // processDataCompare(response1, response2)
 
-  reloadPage() {
+  const reloadPage = () => {
     window.location.reload();
   }
 
-  handleInputChange(event) {
+  const handleInputChangeCheckboxDiffFields = (event) => {
     const target = event.target;
     const value = target.type === 'checkbox' ? target.checked : target.value;
     const name = target.name;
-    this.setState({
-      [name]: value
-    });
-  }
-
-  handleInputChangeCheckboxDiffFields(event) {
-    const target = event.target;
-    const value = target.type === 'checkbox' ? target.checked : target.value;
-    const name = target.name;
-    let checkboxDiffFieldsValue = this.props.diffFields;
+    let checkboxDiffFieldsValue = props.diffFields;
     let checkboxFieldName = name.replace("checkbox_", "");
     let lowercaseCheckboxFieldName = checkboxFieldName.toLowerCase();
     checkboxDiffFieldsValue[lowercaseCheckboxFieldName] = value;
-    this.props.setDiffFields(checkboxDiffFieldsValue);
+    props.setDiffFields(checkboxDiffFieldsValue);
   }
 
 
-  render() {
-    const diffFields = {};
-    diffFields['description'] = "Description (Full)";
-    diffFields['do_description'] = "DO Description";
-    diffFields['go_description'] = "GO Description";
-    diffFields['orthology_description'] = "Orthology Description";
-    diffFields['tissue_expression_description'] = "Expression Description";
-    return (
-        <form>
-          <div style={{display: this.state.showDivTopArrowButton ? 'block' : 'none', position: 'fixed', top: 25, right: 75}}><span style={{color: 'lime', fontSize: 30}} onClick={this.handleClickTopArrowButton}>&#8593;</span></div>
-          <div style={{display: this.state.showDivMenuButton2A ? 'block' : 'none', position: 'fixed', top: 25, right: 25}}><span style={{color: 'lime', fontSize: 30}} onClick={this.handleClickButton2A}>&#9776;</span></div>
-          <div style={{display: this.state.showDivMenuButton2C ? 'block' : 'none', position: 'fixed', top: 25, right: 25}}><span style={{color: 'lime', fontSize: 30}} onClick={this.handleClickButton2C}>&#9776;</span></div>
+  const diffFields = {};
+  diffFields['description'] = "Description (Full)";
+  diffFields['do_description'] = "DO Description";
+  diffFields['go_description'] = "GO Description";
+  diffFields['orthology_description'] = "Orthology Description";
+  diffFields['tissue_expression_description'] = "Expression Description";
+  return (
+      <form>
+        <div style={{display: showDivTopArrowButton ? 'block' : 'none', position: 'fixed', top: 25, right: 75}}><span style={{color: 'lime', fontSize: 30}} onClick={handleClickTopArrowButton}>&#8593;</span></div>
+        <div style={{display: showDivMenuButton2A ? 'block' : 'none', position: 'fixed', top: 25, right: 25}}><span style={{color: 'lime', fontSize: 30}} onClick={handleClickButton2A}>&#9776;</span></div>
+        <div style={{display: showDivMenuButton2C ? 'block' : 'none', position: 'fixed', top: 25, right: 25}}><span style={{color: 'lime', fontSize: 30}} onClick={handleClickButton2C}>&#9776;</span></div>
 
-          <ModSelector/>
+        <ModSelector/>
 
-          <div id='div_section_select'>
+        <div id='div_section_select'>
+          <label>
+            <table name="table_section_select" id="table_section_select">
+              <tbody name="tbody_section_select" id="tbody_section_select">
+              <tr>
+                <td style={{padding:"14px", background: backgroundDiffTab}} onClick={handleClickShowSectionDiff}><span>Compare Files</span></td>
+                <td style={{padding:"14px", background: backgroundDownloadTab}} onClick={handleClickShowSectionDownload}><span>Download File</span></td>
+                <td style={{padding:"14px", background: backgroundLoadTab}} onClick={handleClickShowSectionView}><span>View File</span></td>
+              </tr>
+              </tbody>
+            </table>
+          </label>
+        </div>
+
+        <div id='div_section_diff' style={{display: showDivDiffSection ? 'block' : 'none'}}>
+          <h3 id='anchor2Aresult'>Compare Files</h3>
+
+          <div id='div_diff_loading' style={{display: showDivDiffLoading ? 'block' : 'none', fontSize: 24}}>LOADING<img alt="image_LOADING" width="50" height="50" src="http://tazendra.caltech.edu/~azurebrd/cgi-bin/testing/amigo/loading.gif"/><br/><br/>
+          </div>
+          <div id='div_diff_result' style={{display: showDivDiffResult ? 'block' : 'none'}}>
             <label>
-              <table name="table_section_select" id="table_section_select">
-                <tbody name="tbody_section_select" id="tbody_section_select">
+              General Stats:
+              <table
+                  name="table_diff_stats"
+                  id="table_diff_stats" >
+                <thead>
                 <tr>
-                  <td style={{padding:"14px", background: this.state.backgroundDiffTab}} onClick={this.handleClickShowSectionDiff}><span>Compare Files</span></td>
-                  <td style={{padding:"14px", background: this.state.backgroundDownloadTab}} onClick={this.handleClickShowSectionDownload}><span>Download File</span></td>
-                  <td style={{padding:"14px", background: this.state.backgroundLoadTab}} onClick={this.handleClickShowSectionView}><span>View File</span></td>
+                  <th>field</th>
+                  <th id="header_stats_date1" name="header_stats_date1">{props.diffFileObj1 ? props.diffFileObj1.uploadDate : ''}</th>
+                  <th id="header_stats_date2" name="header_stats_date2">{props.diffFileObj2 ? props.diffFileObj2.uploadDate : ''}</th>
                 </tr>
+                </thead>
+                <tbody id="table_diff_stats_body" name="table_diff_stats_body">
+                {rowsTableDiffStats.map((item, idx) => (
+                    <tr id="addr0" key={idx}>
+                      <td>{rowsTableDiffStats[idx].field}</td>
+                      <td>{rowsTableDiffStats[idx].date1}</td>
+                      <td>{rowsTableDiffStats[idx].date2}</td>
+                    </tr>
+                ))}
                 </tbody>
               </table>
             </label>
+            <br />
+            <label>
+              <div
+                  name="div_diff_results_text"
+                  id="div_diff_results_text"
+                  style={{whiteSpace: 'pre-line'}}
+              >
+                {textDivDiffResults}
+              </div>
+            </label>
+            <label>
+              <table
+                  name="table_diff"
+                  id="table_diff" >
+                <thead>
+                <tr>
+                  <th>gene</th>
+                  <th>name</th>
+                  <th id="header_diff_date1" name="header_diff_date1">{props.diffFileObj1 ? props.diffFileObj1.uploadDate : ''}</th>
+                  <th id="header_diff_date2" name="header_diff_date2">{props.diffFileObj2 ? props.diffFileObj2.uploadDate : ''}</th>
+                </tr>
+                </thead>
+                <tbody id="table_diff_body" name="table_diff_body">
+                {rowsTableDiff.map((item, idx) => (
+                    <tr id="addr0" key={idx}>
+                      <td>{rowsTableDiff[idx].geneid}</td>
+                      <td>{rowsTableDiff[idx].genename}</td>
+                      <td>{rowsTableDiff[idx].desc1}</td>
+                      <td>{rowsTableDiff[idx].desc2}</td>
+                    </tr>
+                ))}
+                </tbody>
+              </table>
+            </label>
+            <br />
           </div>
 
-          <div id='div_section_diff' style={{display: this.state.showDivDiffSection ? 'block' : 'none'}}>
-            <h3 id='anchor2Aresult'>Compare Files</h3>
+          <table id='anchor2Acontrol'>
+            <tbody id="table_compare_body" name="table_compare_body">
+            <tr><td style={{verticalAlign: 'top'}}>
+              <label>
+                Select old file:<br/>
+                <select name="date1" id="date1" size={props.descriptionFileObjects.length} onChange={(event) => props.setDescriptionFileForDiff(JSON.parse(event.target.value), 0)}>
+                  {props.descriptionFileObjects.map(fileObj =>
+                      <option
+                          key={fileObj.releaseVersion + ' - ' + fileObj.releaseType + ' - ' + fileObj.uploadDate}
+                          value={JSON.stringify(fileObj)}>{fileObj.releaseVersion + ' - ' + fileObj.releaseType + ' - ' + fileObj.uploadDate}
+                      </option>)}
+                </select>
+              </label>
+            </td><td style={{verticalAlign: 'top'}}>
+              <label>
+                Select new file:<br/>
+                <select name="date2" id="date2" size={props.descriptionFileObjects.length} onChange={(event) => props.setDescriptionFileForDiff(JSON.parse(event.target.value), 1)}>
+                  {props.descriptionFileObjects.map(fileObj =>
+                      <option
+                          key={fileObj.releaseVersion + ' - ' + fileObj.releaseType + ' - ' + fileObj.uploadDate}
+                          value={JSON.stringify(fileObj)}>{fileObj.releaseVersion + ' - ' + fileObj.releaseType + ' - ' + fileObj.uploadDate}
+                      </option>)}
+                </select>
+              </label>
+            </td><td style={{verticalAlign: 'top'}}>
+              <label>
+                Select field to compare:<br/>
+                <select name="diffField" id="diffField" size={Object.keys(diffFields).length}
+                        onChange={(e) => setDiffField(e.target.value)}>
+                  {Object.values(diffFields).map((diffField) => <option key={diffField} value={diffField}>{diffField}</option>)}
+                </select>
+              </label>
+            </td></tr>
+            </tbody>
+          </table>
+          <input type="button" value="Compare files" onClick={handleSubmitCompare}/>
+          <input type="button" value="Start Over" onClick={() => reloadPage()} />
+          <br/><br/>
 
-            <div id='div_diff_loading' style={{display: this.state.showDivDiffLoading ? 'block' : 'none', fontSize: 24}}>LOADING<img alt="image_LOADING" width="50" height="50" src="http://tazendra.caltech.edu/~azurebrd/cgi-bin/testing/amigo/loading.gif"/><br/><br/>
-            </div>
-            <div id='div_diff_result' style={{display: this.state.showDivDiffResult ? 'block' : 'none'}}>
-              <label>
-                General Stats:
-                <table
-                    name="table_diff_stats"
-                    id="table_diff_stats" >
-                  <thead>
-                  <tr>
-                    <th>field</th>
-                    <th id="header_stats_date1" name="header_stats_date1">{this.state.headerStatsDate1}</th>
-                    <th id="header_stats_date2" name="header_stats_date2">{this.state.headerStatsDate2}</th>
-                  </tr>
-                  </thead>
-                  <tbody id="table_diff_stats_body" name="table_diff_stats_body">
-                  {this.state.rowsTableDiffStats.map((item, idx) => (
-                      <tr id="addr0" key={idx}>
-                        <td>{this.state.rowsTableDiffStats[idx].field}</td>
-                        <td>{this.state.rowsTableDiffStats[idx].date1}</td>
-                        <td>{this.state.rowsTableDiffStats[idx].date2}</td>
-                      </tr>
-                  ))}
-                  </tbody>
-                </table>
-              </label>
-              <br />
-              <label>
-                <div
-                    name="div_diff_results_text"
-                    id="div_diff_results_text"
-                    style={{whiteSpace: 'pre-line'}}
-                >
-                  {this.state.textDivDiffResults}
-                </div>
-              </label>
-              <label>
-                <table
-                    name="table_diff"
-                    id="table_diff" >
-                  <thead>
-                  <tr>
-                    <th>gene</th>
-                    <th>name</th>
-                    <th id="header_diff_date1" name="header_diff_date1">{this.state.headerDiffDate1}</th>
-                    <th id="header_diff_date2" name="header_diff_date2">{this.state.headerDiffDate2}</th>
-                  </tr>
-                  </thead>
-                  <tbody id="table_diff_body" name="table_diff_body">
-                  {this.state.rowsTableDiff.map((item, idx) => (
-                      <tr id="addr0" key={idx}>
-                        <td>{this.state.rowsTableDiff[idx].geneid}</td>
-                        <td>{this.state.rowsTableDiff[idx].genename}</td>
-                        <td>{this.state.rowsTableDiff[idx].desc1}</td>
-                        <td>{this.state.rowsTableDiff[idx].desc2}</td>
-                      </tr>
-                  ))}
-                  </tbody>
-                </table>
-              </label>
-              <br />
-            </div>
-            {/* for when results were at the top of the page and users might need to jump to the controls
-        <div id='div_diff_navigation' style={{display: this.state.showDivDiffNavigation ? 'block' : 'none'}}>
-          <a href="#mod" style={{textDecoration: 'none'}}><input type="button" value="Edit Query"/></a>
-          <input type="button" value="Start Over" onClick={() => this.reloadPage()} /><br/><br/>
+          <label>
+            Optional gene name filter:<br/>
+            <textarea
+                name="diffGeneNameFilter"
+                id="diffGeneNameFilter"
+                type="text"
+                size="100"
+                value={diffGeneNameFilter}
+                onChange={(e) => setDiffGeneNameFilter(e.target.value)} /><br/>
+            <input
+                name="checkboxDiffGeneNameFilter"
+                type="checkbox"
+                checked={checkboxDiffGeneNameFilter}
+                onChange={(e) => setCheckboxDiffGeneNameFilter(e.target.checked)} />
+            Case sensitive<br/>
+            <input
+                name="checkboxDiffGeneNameSubstring"
+                type="checkbox"
+                checked={checkboxDiffGeneNameSubstring}
+                onChange={(e) => setCheckboxDiffGeneNameSubstring(e.target.checked)} />
+            Substring Match<br/>
+          </label>
+          <br />
+          <label>
+            Optional phrase filter:<br/>
+            <textarea
+                name="diffKeywordFilter"
+                id="diffKeywordFilter"
+                type="text"
+                size="100"
+                value={diffKeywordFilter}
+                onChange={(e) => setDiffKeywordFilter(e.target.value)} /><br/>
+            <input
+                name="checkboxDiffKeywordFilter"
+                type="checkbox"
+                checked={checkboxDiffKeywordFilter}
+                onChange={(e) => setCheckboxDiffKeywordFilter(e.target.value)} />
+            Case sensitive<br/>
+          </label>
+          <br /><br/>
         </div>
-  */}
 
-            <table id='anchor2Acontrol'>
-              <tbody id="table_compare_body" name="table_compare_body">
-              <tr><td style={{verticalAlign: 'top'}}>
-                <label>
-                  Select old file:<br/>
-                  <select name="date1" id="date1" size={this.props.descriptionFileObjects.length} onChange={(event) => this.setState({descriptionFileObj1: JSON.parse(event.target.value)})}>
-                    {this.props.descriptionFileObjects.map(fileObj =>
-                        <option
-                            key={fileObj.releaseVersion + ' - ' + fileObj.releaseType + ' - ' + fileObj.uploadDate}
-                            value={JSON.stringify(fileObj)}>{fileObj.releaseVersion + ' - ' + fileObj.releaseType + ' - ' + fileObj.uploadDate}
-                        </option>)}
-                  </select>
-                </label>
-              </td><td style={{verticalAlign: 'top'}}>
-                <label>
-                  Select new file:<br/>
-                  <select name="date2" id="date2" size={this.props.descriptionFileObjects.length} onChange={(event) => this.setState({descriptionFileObj2: JSON.parse(event.target.value)})}>
-                    {this.props.descriptionFileObjects.map(fileObj =>
-                        <option
-                            key={fileObj.releaseVersion + ' - ' + fileObj.releaseType + ' - ' + fileObj.uploadDate}
-                            value={JSON.stringify(fileObj)}>{fileObj.releaseVersion + ' - ' + fileObj.releaseType + ' - ' + fileObj.uploadDate}
-                        </option>)}
-                  </select>
-                </label>
-              </td><td style={{verticalAlign: 'top'}}>
-                <label>
-                  Select field to compare:<br/>
-                  <select name="diffField" id="diffField" size={Object.keys(diffFields).length}  onChange={this.handleChange}>
-                    {Object.values(diffFields).map((diffField) => <option key={diffField} value={diffField}>{diffField}</option>)}
-                  </select>
-                </label>
-              </td></tr>
-              </tbody>
-            </table>
-            <input type="button" value="Compare files" onClick={this.handleSubmitCompare}/>
-            <input type="button" value="Start Over" onClick={() => this.reloadPage()} />
-            <br/><br/>
-
-            <label>
-              Optional gene name filter:<br/>
-              <textarea
-                  name="diffGeneNameFilter"
-                  id="diffGeneNameFilter"
-                  type="text"
-                  size="100"
-                  value={this.state.diffGeneNameFilter}
-                  onChange={this.handleChange} /><br/>
-              <input
-                  name="checkboxDiffGeneNameFilter"
-                  type="checkbox"
-                  checked={this.state.checkboxDiffGeneNameFilter}
-                  onChange={this.handleInputChange} />
-              Case sensitive<br/>
-              <input
-                  name="checkboxDiffGeneNameSubstring"
-                  type="checkbox"
-                  checked={this.state.checkboxDiffGeneNameSubstring}
-                  onChange={this.handleInputChange} />
-              Substring Match<br/>
-            </label>
-            <br />
-            <label>
-              Optional phrase filter:<br/>
-              <textarea
-                  name="diffKeywordFilter"
-                  id="diffKeywordFilter"
-                  type="text"
-                  size="100"
-                  value={this.state.diffKeywordFilter}
-                  onChange={this.handleChange} /><br/>
-              <input
-                  name="checkboxDiffKeywordFilter"
-                  type="checkbox"
-                  checked={this.state.checkboxDiffKeywordFilter}
-                  onChange={this.handleInputChange} />
-              Case sensitive<br/>
-            </label>
-            <br /><br/>
-          </div>
-
-          <div id='div_section_download' style={{display: this.state.showDivDownloadSection ? 'block' : 'none'}}>
-            <h3>Download a file</h3>
-            <label id='anchor2Bcontrol'>
-              Select file to download:<br/>
-              <select name="dateDownload" id="dateDownload" size={this.props.descriptionFileObjects.length} onChange={(event) => this.setState({descriptionFileObj1: JSON.parse(event.target.value)})}>
-                {this.props.descriptionFileObjects.map(fileObj =>
-                    <option
-                        key={fileObj.releaseVersion + ' - ' + fileObj.releaseType + ' - ' + fileObj.uploadDate}
-                        value={JSON.stringify(fileObj)}>{fileObj.releaseVersion + ' - ' + fileObj.releaseType + ' - ' + fileObj.uploadDate}
-                    </option>)}
-              </select>
-            </label>
-            <br />
-            {/*
+        <div id='div_section_download' style={{display: showDivDownloadSection ? 'block' : 'none'}}>
+          <h3>Download a file</h3>
+          <label id='anchor2Bcontrol'>
+            Select file to download:<br/>
+            <select name="dateDownload" id="dateDownload" size={props.descriptionFileObjects.length} onChange={(event) => props.setDescriptionFileForDiff(JSON.parse(event.target.value), 0)}>
+              {props.descriptionFileObjects.map(fileObj =>
+                  <option
+                      key={fileObj.releaseVersion + ' - ' + fileObj.releaseType + ' - ' + fileObj.uploadDate}
+                      value={JSON.stringify(fileObj)}>{fileObj.releaseVersion + ' - ' + fileObj.releaseType + ' - ' + fileObj.uploadDate}
+                  </option>)}
+            </select>
+          </label>
+          <br />
+          {/*
 Doesn't work cross origin (across domains)
         <a id="hrefDownload" href="http://www.google.com" download="file.txt" style={{textDecoration: 'none'}}><input type="button" value="Download File"/></a>
 */}
-            <input type="button" value="Open JSON in new tab" onClick={this.handleSubmitOpenTab}/> After it loads, you can save it.<br/>
-            <input type="button" value="Generate JSON link" onClick={this.handleSubmitGenerateLink}/> You can right-click and save it, instead of waiting for it to load.<br/><br/>
-            <label>
-              <div
-                  style={{display: this.state.showDownloadLink ? 'block' : 'none'}}
-                  name="div_link_to_json"
-                  id="div_link_to_json" >
-                <a target='_blank' href={this.state.downloadLinkUrl} style={{textDecoration: 'none'}}>{this.state.downloadLinkText}</a>
-              </div>
-            </label>
-          </div>
-
-
-          <div id='div_section_load' style={{display: this.state.showDivLoadSection ? 'block' : 'none'}}>
-            <h3 id='anchor2Cresult'>View a file</h3>
-
-            <div id='div_load_loading' style={{display: this.state.showDivLoadLoading ? 'block' : 'none', fontSize: 24}}>LOADING<img alt="image_LOADING" width="50" height="50" src="http://tazendra.caltech.edu/~azurebrd/cgi-bin/testing/amigo/loading.gif"/><br/><br/>
+          <input type="button" value="Open JSON in new tab" onClick={handleSubmitOpenTab}/> After it loads, you can save it.<br/>
+          <input type="button" value="Generate JSON link" onClick={handleSubmitGenerateLink}/> You can right-click and save it, instead of waiting for it to load.<br/><br/>
+          <label>
+            <div
+                style={{display: showDownloadLink ? 'block' : 'none'}}
+                name="div_link_to_json"
+                id="div_link_to_json" >
+              <a target='_blank' href={downloadLinkUrl} style={{textDecoration: 'none'}}>{downloadLinkText}</a>
             </div>
-            <div id='div_load_result' style={{display: this.state.showDivLoadResult ? 'block' : 'none'}}>
-              <label>
-                General Stats:
-                <table
-                    name="table_load_stats"
-                    id="table_load_stats" >
-                  <thead>
-                  <tr>
-                    <th>field</th>
-                    <th>value</th>
-                  </tr>
-                  </thead>
-                  <tbody id="table_load_stats_body" name="table_load_stats_body">
-                  {this.state.rowsTableLoadStats.map((item, idx) => (
-                      <tr id="addr0" key={idx}>
-                        <td>{this.state.rowsTableLoadStats[idx].field}</td>
-                        <td>{this.state.rowsTableLoadStats[idx].value}</td>
-                      </tr>
-                  ))}
-                  </tbody>
-                </table>
-              </label>
-              <br />
-              <label>
-                Field counts: <br />
-              </label>
-              {Object.values(diffFields).map(function(item){
+          </label>
+        </div>
+
+
+        <div id='div_section_load' style={{display: showDivLoadSection ? 'block' : 'none'}}>
+          <h3 id='anchor2Cresult'>View a file</h3>
+
+          <div id='div_load_loading' style={{display: showDivLoadLoading ? 'block' : 'none', fontSize: 24}}>LOADING<img alt="image_LOADING" width="50" height="50" src="http://tazendra.caltech.edu/~azurebrd/cgi-bin/testing/amigo/loading.gif"/><br/><br/>
+          </div>
+          <div id='div_load_result' style={{display: showDivLoadResult ? 'block' : 'none'}}>
+            <label>
+              General Stats:
+              <table
+                  name="table_load_stats"
+                  id="table_load_stats" >
+                <thead>
+                <tr>
+                  <th>field</th>
+                  <th>value</th>
+                </tr>
+                </thead>
+                <tbody id="table_load_stats_body" name="table_load_stats_body">
+                {rowsTableLoadStats.map((item, idx) => (
+                    <tr id="addr0" key={idx}>
+                      <td>{rowsTableLoadStats[idx].field}</td>
+                      <td>{rowsTableLoadStats[idx].value}</td>
+                    </tr>
+                ))}
+                </tbody>
+              </table>
+            </label>
+            <br />
+            <label>
+              Field counts: <br />
+            </label>
+            {Object.values(diffFields).map(function(item){
 //             let name = 'matchcount_' + item;
-                let label_key = 'label_key_matchcount_' + item;
-                return (
-                    <label key={label_key} style={{display: this.state.showLabelFieldsMatchCount[item] ? 'block' : 'none'}}>
-                      {item} count: {this.state.loadFieldsMatchCount[item]}<br/>
-                    </label>
-                )}, this)}
-              <br />
 
-              <label>
-                File Load Result:<br/>
-                <input type="button" value="Previous Page" onClick={this.handleSubmitLoadPrevPage}/>
-                &nbsp;&nbsp;Page {this.state.pageNumber}&nbsp;&nbsp;
-                <input type="button" value="Next Page" onClick={this.handleSubmitLoadNextPage}/><br/>
-              </label>
-              <label>
-                <table
-                    name="table_load"
-                    id="table_load" >
-                  <thead>
-                  <tr>
-                    <th id="header_geneid" name="header_geneid">Gene ID</th>
-                    <th id="header_genename" name="header_genename">Gene Name</th>
-                    <th id="header_field" name="header_field">Field</th>
-                    <th id="header_text" name="header_text">Text</th>
-                  </tr>
-                  </thead>
-                  <tbody id="table_load_body" name="table_load_body">
-                  {this.state.rowsTableLoad.map((item, idx) => (
-                      <tr id="addr0" key={idx}>
-                        <td>{this.state.rowsTableLoad[idx].gene_id}</td>
-                        <td>{this.state.rowsTableLoad[idx].gene_name}</td>
-                        <td>{this.state.rowsTableLoad[idx].field}</td>
-                        <td>{this.state.rowsTableLoad[idx].text}</td>
-                      </tr>
-                  ))}
-                  </tbody>
-                </table><br/>
-              </label>
-              <label>
-                <input type="button" value="Previous Page" onClick={this.handleSubmitLoadPrevPage}/>
-                &nbsp;&nbsp;Page {this.state.pageNumber}&nbsp;&nbsp;
-                <input type="button" value="Next Page" onClick={this.handleSubmitLoadNextPage}/><br/>
-                <br/>
-              </label>
-            </div>
-
-            <label id='anchor2Ccontrol'>
-              Select file to view:<br/>
-              <select name="dateLoad" id="dateLoad" size={this.props.descriptionFileObjects.length} onChange={(event) => this.setState({descriptionFileObj1: JSON.parse(event.target.value)})}>
-                {this.props.descriptionFileObjects.map(fileObj =>
-                    <option
-                        key={fileObj.releaseVersion + ' - ' + fileObj.releaseType + ' - ' + fileObj.uploadDate}
-                        value={JSON.stringify(fileObj)}>{fileObj.releaseVersion + ' - ' + fileObj.releaseType + ' - ' + fileObj.uploadDate}
-                    </option>)}
-              </select>
-            </label>
-            <br />
-            <input type="button" value="Load JSON" onClick={this.handleSubmitLoad}/><br/>
-            <br />
-            <label>
-              Which fields to display : <br />
-            </label>
-            {Object.keys(diffFields).map(function(item){
-              let name = 'checkbox_' + item;
-              let label_key = 'label_key_' + item;
+              if (showLabelFieldsMatchCount !== undefined) {
+              let label_key = 'label_key_matchcount_' + item;
               return (
-                  <label key={label_key}>
-                    <input
-                        name={name}
-                        type="checkbox"
-                        checked={this.props.diffFields[item]}
-                        onChange={this.handleInputChangeCheckboxDiffFields}
-                    />{diffFields[item]}<br/>
+                  <label key={label_key} style={{display: showLabelFieldsMatchCount[item] ? 'block' : 'none'}}>
+                    {item} count: {loadFieldsMatchCount[item]}<br/>
                   </label>
-              )}, this)}
+              )}}, this)}
             <br />
+
             <label>
-              Which type of results to show : <br />
+              File Load Result:<br/>
+              <input type="button" value="Previous Page" onClick={handleSubmitLoadPrevPage}/>
+              &nbsp;&nbsp;Page {pageNumber}&nbsp;&nbsp;
+              <input type="button" value="Next Page" onClick={handleSubmitLoadNextPage}/><br/>
             </label>
             <label>
-              <input
-                  name="checkboxHasData"
-                  type="checkbox"
-                  checked={this.state.checkboxHasData}
-                  onChange={this.handleInputChange} />
-              Has Data<br/>
+              <table
+                  name="table_load"
+                  id="table_load" >
+                <thead>
+                <tr>
+                  <th id="header_geneid" name="header_geneid">Gene ID</th>
+                  <th id="header_genename" name="header_genename">Gene Name</th>
+                  <th id="header_field" name="header_field">Field</th>
+                  <th id="header_text" name="header_text">Text</th>
+                </tr>
+                </thead>
+                <tbody id="table_load_body" name="table_load_body">
+                {rowsTableLoad.map((item, idx) => (
+                    <tr id="addr0" key={idx}>
+                      <td>{rowsTableLoad[idx].gene_id}</td>
+                      <td>{rowsTableLoad[idx].gene_name}</td>
+                      <td>{rowsTableLoad[idx].field}</td>
+                      <td>{rowsTableLoad[idx].text}</td>
+                    </tr>
+                ))}
+                </tbody>
+              </table><br/>
             </label>
             <label>
-              <input
-                  name="checkboxHasNoData"
-                  type="checkbox"
-                  checked={this.state.checkboxHasNoData}
-                  onChange={this.handleInputChange} />
-              Does not have Data<br/>
+              <input type="button" value="Previous Page" onClick={handleSubmitLoadPrevPage}/>
+              &nbsp;&nbsp;Page {pageNumber}&nbsp;&nbsp;
+              <input type="button" value="Next Page" onClick={handleSubmitLoadNextPage}/><br/>
+              <br/>
             </label>
-            <br />
-            <label>
-              Entries per page :
-              <input
-                  name="entriesPerPage"
-                  id="entriesPerPage"
-                  type="number"
-                  size="5"
-                  value={this.state.entriesPerPage}
-                  onChange={this.handleChange} />
-            </label>
-            <br />
-            <label>
-              Page number :
-              <input
-                  name="pageNumber"
-                  id="pageNumber"
-                  type="number"
-                  size="5"
-                  value={this.state.pageNumber}
-                  onChange={this.handleChange} />
-            </label>
-            <br />
-            <br />
-            <label>
-              Optional gene name filter:<br/>
-              <textarea
-                  name="loadGeneNameFilter"
-                  id="loadGeneNameFilter"
-                  type="text"
-                  size="100"
-                  value={this.state.loadGeneNameFilter}
-                  onChange={this.handleChange} /><br/>
-              <input
-                  name="checkboxLoadGeneNameFilter"
-                  type="checkbox"
-                  checked={this.state.checkboxLoadGeneNameFilter}
-                  onChange={this.handleInputChange} />
-              Case sensitive<br/>
-              <input
-                  name="checkboxLoadGeneNameSubstring"
-                  type="checkbox"
-                  checked={this.state.checkboxLoadGeneNameSubstring}
-                  onChange={this.handleInputChange} />
-              Substring Match<br/>
-            </label>
-            <br />
-            <label>
-              Optional phrase filter:<br/>
-              <textarea
-                  name="loadKeywordFilter"
-                  id="loadKeywordFilter"
-                  type="text"
-                  size="100"
-                  value={this.state.loadKeywordFilter}
-                  onChange={this.handleChange} /><br/>
-              <input
-                  name="checkboxLoadKeywordFilter"
-                  type="checkbox"
-                  checked={this.state.checkboxLoadKeywordFilter}
-                  onChange={this.handleInputChange} />
-              Case sensitive<br/>
-            </label>
-            <br />
-            <label>
-              Optional ontology ID filter:<br/>
-              <textarea
-                  name="loadOntologyFilter"
-                  id="loadOntologyFilter"
-                  type="text"
-                  size="100"
-                  value={this.state.loadOntologyFilter}
-                  onChange={this.handleChange} /><br/>
-            </label>
-            <br />
-            <label>
-              Count of set_final_experimental_go_ids
-              <select name="loadComparisonGoids" id="loadComparisonGoids" size="1" value={this.state.loadComparisonGoids} onChange={this.handleChange}>
-                <option value=">=">&gt;=</option>
-                <option value="<=">&lt;=</option>
-                <option value="==">==</option>
-              </select>
-              <input
-                  name="loadGoidsCount"
-                  id="loadGoidsCount"
-                  type="number"
-                  size="5"
-                  value={this.state.loadGoidsCount}
-                  onChange={this.handleChange} />
-            </label>
-            <br />
           </div>
 
-        </form>
-    );
-  } // render()
+          <label id='anchor2Ccontrol'>
+            Select file to view:<br/>
+            <select name="dateLoad" id="dateLoad" size={props.descriptionFileObjects.length} onChange={(event) => props.setDescriptionFileForDiff(JSON.parse(event.target.value), 0)}>
+              {props.descriptionFileObjects.map(fileObj =>
+                  <option
+                      key={fileObj.releaseVersion + ' - ' + fileObj.releaseType + ' - ' + fileObj.uploadDate}
+                      value={JSON.stringify(fileObj)}>{fileObj.releaseVersion + ' - ' + fileObj.releaseType + ' - ' + fileObj.uploadDate}
+                  </option>)}
+            </select>
+          </label>
+          <br />
+          <input type="button" value="Load JSON" onClick={handleSubmitLoad}/><br/>
+          <br />
+          <label>
+            Which fields to display : <br />
+          </label>
+          {Object.keys(diffFields).map(function(item){
+            let name = 'checkbox_' + item;
+            let label_key = 'label_key_' + item;
+            return (
+                <label key={label_key}>
+                  <input
+                      name={name}
+                      type="checkbox"
+                      checked={props.diffFields[item]}
+                      onChange={handleInputChangeCheckboxDiffFields}
+                  />{diffFields[item]}<br/>
+                </label>
+            )}, this)}
+          <br />
+          <label>
+            Which type of results to show : <br />
+          </label>
+          <label>
+            <input
+                name="checkboxHasData"
+                type="checkbox"
+                checked={checkboxHasData}
+                onChange={(e) => setCheckboxHasData(e.target.checked)} />
+            Has Data<br/>
+          </label>
+          <label>
+            <input
+                name="checkboxHasNoData"
+                type="checkbox"
+                checked={!checkboxHasData}
+                onChange={(e) => setCheckboxHasData(e.target.checked)} />
+            Does not have Data<br/>
+          </label>
+          <br />
+          <label>
+            Entries per page :
+            <input
+                name="entriesPerPage"
+                id="entriesPerPage"
+                type="number"
+                size="5"
+                value={entriesPerPage}
+                onChange={(e) => setEntriesPerPage(e.target.value)} />
+          </label>
+          <br />
+          <label>
+            Page number :
+            <input
+                name="pageNumber"
+                id="pageNumber"
+                type="number"
+                size="5"
+                value={pageNumber}
+                onChange={(e) => setPageNumber(e.target.value)} />
+          </label>
+          <br />
+          <br />
+          <label>
+            Optional gene name filter:<br/>
+            <textarea
+                name="loadGeneNameFilter"
+                id="loadGeneNameFilter"
+                type="text"
+                size="100"
+                value={loadGeneNameFilter}
+                onChange={(e) => setLoadGeneNameFilter(e.target.value)} /><br/>
+            <input
+                name="checkboxLoadGeneNameFilter"
+                type="checkbox"
+                checked={checkboxLoadGeneNameFilter}
+                onChange={(e) => setCheckboxLoadGeneNameFilter(e.target.checked)} />
+            Case sensitive<br/>
+            <input
+                name="checkboxLoadGeneNameSubstring"
+                type="checkbox"
+                checked={checkboxLoadGeneNameSubstring}
+                onChange={(e) => setCheckboxLoadGeneNameSubstring(e.target.value)} />
+            Substring Match<br/>
+          </label>
+          <br />
+          <label>
+            Optional phrase filter:<br/>
+            <textarea
+                name="loadKeywordFilter"
+                id="loadKeywordFilter"
+                type="text"
+                size="100"
+                value={loadKeywordFilter}
+                onChange={(e) => setLoadKeywordFilter(e.target.value)} /><br/>
+            <input
+                name="checkboxLoadKeywordFilter"
+                type="checkbox"
+                checked={checkboxLoadKeywordFilter}
+                onChange={(e) => setCheckboxLoadKeywordFilter(e.target.checked)} />
+            Case sensitive<br/>
+          </label>
+          <br />
+          <label>
+            Optional ontology ID filter:<br/>
+            <textarea
+                name="loadOntologyFilter"
+                id="loadOntologyFilter"
+                type="text"
+                size="100"
+                value={loadOntologyFilter}
+                onChange={(e) => setLoadOntologyFilter(e.target.value)} /><br/>
+          </label>
+          <br />
+          <label>
+            Count of set_final_experimental_go_ids
+            <select name="loadComparisonGoids" id="loadComparisonGoids" size="1" value={loadComparisonGoids}
+                    onChange={(e) => setLoadComparisonGoids(e.target.value)}>
+              <option value=">=">&gt;=</option>
+              <option value="<=">&lt;=</option>
+              <option value="==">==</option>
+            </select>
+            <input
+                name="loadGoidsCount"
+                id="loadGoidsCount"
+                type="number"
+                size="5"
+                value={loadGoidsCount}
+                onChange={(e) => setLoadGoidsCount(e.target.value)} />
+          </label>
+          <br />
+        </div>
 
-} // class ReportTool extends React.Component
+      </form>
+    );
+}
 
 const mapStateToProps = state => ({
   selectedMod: getSelectedMod(state),
   latestFilesOnly: getLatestFilesOnly(state),
   diffFields: getDiffFields(state),
-  descriptionFileObjects: getDescriptionFileObjects(state)
+  descriptionFileObjects: getDescriptionFileObjects(state),
+  diffFileObj1: getDiffFileObjs(state)[0],
+  diffFileObj2: getDiffFileObjs(state)[1],
 });
 
-export default connect(mapStateToProps, {setModsList, setDiffFields, fetchModsList, fetchFilesFromFMS})(ReportTool)
+export default connect(mapStateToProps, {setModsList, setDiffFields, fetchModsList, fetchFilesFromFMS,
+  setDescriptionFileForDiff})(ReportTool)
