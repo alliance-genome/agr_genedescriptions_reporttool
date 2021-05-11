@@ -1,4 +1,6 @@
 import React from 'react';
+import axios from "axios";
+import pako from 'pako';
 
 export function generateFmsJsonUrl(url, mod) {
   let baseUrl = 'https://download.alliancegenome.org/';
@@ -50,5 +52,21 @@ export const getS3PathsFromFms = (testOrLive, mod) => {
           }));
         });
   });
+}
+
+export const requestAndGunzipBodyIfNecessary = (url) => {
+    return new Promise((resolve, reject) => {
+        axios.get(url, { responseType: 'arraybuffer' })
+            .then(function (response) {
+                if (response.headers['content-type'] === 'application/x-gzip') {
+                    resolve(JSON.parse(pako.inflate(response.data, {to: 'string'})));
+                } else {
+                    resolve(JSON.parse(response.data));
+                }
+            })
+            .catch(function (error) {
+                reject(error);
+            });
+    })
 }
 
