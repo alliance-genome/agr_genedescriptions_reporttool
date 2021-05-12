@@ -1,4 +1,5 @@
-import {createReducer} from '@reduxjs/toolkit'
+import {createReducer} from '@reduxjs/toolkit';
+
 
 export const initialDiffFelds = [
     { name: 'description', label: "Description (Full)" },
@@ -26,13 +27,20 @@ const initialState = {
     fileLoading: false,
     descriptionFilesContent: [undefined, undefined],
     fileLoadingError: false,
-    viewFilterHasData: false,
+    viewFilterHasData: true,
     viewEntriesPerPage: 100,
     viewPageNum: 1,
     viewFilterOntologyID: '',
     viewFilterMinFinalExpGOIDOp: '>=',
     viewFilterMinFinalExpGOIDCount: 0,
-    currentFilesContentInfo: [undefined, undefined]
+    currentFilesContentInfo: [undefined, undefined],
+    viewSelectedDisplayFields: {
+        description: false,
+        do_description: false,
+        go_description: false,
+        orthology_description: false,
+        tissue_expression_description: false
+    }
 };
 
 export default createReducer(initialState, {
@@ -121,4 +129,10 @@ export default createReducer(initialState, {
     SET_VIEW_FILTER_MIN_FINAL_EXP_GO_ID_COUNT: (state, action) => {
         state.viewFilterMinFinalExpGOIDCount = action.payload.viewFilterMinFinalExpGOIDCount;
     },
+    ADD_VIEW_SELECTED_DISPLAY_FIELD: (state, action) => {
+        state.viewSelectedDisplayFields[action.payload.selectedDisplayField] = true;
+    },
+    REMOVE_VIEW_SELECTED_DISPLAY_FIELD: (state, action) => {
+        state.viewSelectedDisplayFields[action.payload.selectedDisplayField] = false;
+    }
 });

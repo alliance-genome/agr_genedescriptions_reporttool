@@ -17,12 +17,15 @@ export const FETCH_FILE_CONTENT_REQUEST = "FETCH_FILE_CONTENT_REQUEST";
 export const FETCH_FILE_CONTENT_SUCCESS = "FETCH_FILE_CONTENT_SUCCESS";
 export const FETCH_FILE_CONTENT_ERROR = "FETCH_FILE_CONTENT_ERROR";
 export const DISMISS_FILE_LOADING_ERROR = "DISMISS_FILE_LOADING_ERROR";
-export const SET_VIEW_FILTER_HAS_DATA = "SET_SINGLE_FILTER_HAS_DATA";
+export const SET_VIEW_FILTER_HAS_DATA = "SET_VIEW_FILTER_HAS_DATA";
 export const SET_VIEW_ENTRIES_PER_PAGE = "SET_VIEW_ENTRIES_PER_PAGE";
 export const SET_VIEW_PAGE_NUM = "SET_VIEW_PAGE_NUM";
 export const SET_VIEW_FILTER_ONTOLOGY_ID = "SET_VIEW_FILTER_ONTOLOGY_ID"
 export const SET_VIEW_FILTER_MIN_FINAL_EXP_GO_ID_OP = "SET_VIEW_FILTER_MIN_FINAL_EXP_GO_ID_OP";
 export const SET_VIEW_FILTER_MIN_FINAL_EXP_GO_ID_COUNT = "SET_VIEW_FILTER_MIN_FINAL_EXP_GO_ID_COUNT";
+export const ADD_VIEW_SELECTED_DISPLAY_FIELD = "ADD_VIEW_SELECTED_DISPLAY_FIELD";
+export const REMOVE_VIEW_SELECTED_DISPLAY_FIELD = "REMOVE_VIEW_SELECTED_DISPLAY_FIELD";
+
 
 export const fetchModsList = (selectedMod) => {
     return async dispatch => {
@@ -208,4 +211,14 @@ export const setViewFilterMinFinalExpGOIDOp = (viewFilterMinFinalExpGOIDOp) => (
 export const setViewFilterMinFinalExpGOIDCount = (viewFilterMinFinalExpGOIDCount) => ({
     type: SET_VIEW_FILTER_MIN_FINAL_EXP_GO_ID_COUNT,
     payload: { viewFilterMinFinalExpGOIDCount }
+});
+
+export const addViewSelectedDisplayField = (selectedDisplayField) => ({
+    type: ADD_VIEW_SELECTED_DISPLAY_FIELD,
+    payload: { selectedDisplayField }
+});
+
+export const removeViewSelectedDisplayField = (selectedDisplayField) => ({
+    type: REMOVE_VIEW_SELECTED_DISPLAY_FIELD,
+    payload: { selectedDisplayField }
 });
