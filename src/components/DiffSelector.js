@@ -31,6 +31,7 @@ const DiffSelector = (props) => {
                                          onChange={(event) => props.setSelectedFileInfo(JSON.parse(event.target.value), 0)}>
                                 {props.fileNameList.map(fileObj =>
                                     <option
+                                        key={fileObj.releaseVersion + ' - ' + fileObj.releaseType + ' - ' + fileObj.uploadDate}
                                         value={JSON.stringify(fileObj)}>{fileObj.releaseVersion + ' - ' + fileObj.releaseType + ' - ' + fileObj.uploadDate}
                                     </option>)}
                             </FormControl>
@@ -42,6 +43,7 @@ const DiffSelector = (props) => {
                                          onChange={(event) => props.setSelectedFileInfo(JSON.parse(event.target.value), 1)}>
                                 {props.fileNameList.map(fileObj =>
                                     <option
+                                        key={fileObj.releaseVersion + ' - ' + fileObj.releaseType + ' - ' + fileObj.uploadDate}
                                         value={JSON.stringify(fileObj)}>{fileObj.releaseVersion + ' - ' + fileObj.releaseType + ' - ' + fileObj.uploadDate}
                                     </option>)}
                             </FormControl>

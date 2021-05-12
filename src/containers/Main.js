@@ -2,14 +2,13 @@ import { connect } from 'react-redux'
 import '../index.css';
 import {getHtmlVar} from "../lib";
 import React, {useEffect} from 'react';
-import {BrowserRouter as Router, Switch, Route, Link} from 'react-router-dom';
+import {BrowserRouter as Router, Switch, Route} from 'react-router-dom';
 import {fetchFilesFromFMS, fetchModsList} from "../redux/actions";
 import SelectModAndOperation from "./SelectModAndOperation";
 import SelectFiles from "./SelectFiles";
 import {getLatestFilesOnly, getSelectedMod} from "../redux/selectors";
 import DisplayResults from "./DisplayResults";
 import TopNavBar from "../components/TopNavBar";
-import {Nav, Navbar} from "react-bootstrap";
 
 const Main = (props) => {
 

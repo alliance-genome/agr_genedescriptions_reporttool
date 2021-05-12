@@ -2,7 +2,7 @@ import React from 'react';
 import ModSelector from "../components/ModSelector";
 import FileTypeSelector from "../components/FileTypeSelector";
 import OperationSelector from "../components/OperationSelector";
-import {Button, Col, Container, Nav, Navbar, Row} from "react-bootstrap";
+import {Button, Col, Container, Row} from "react-bootstrap";
 import {Link} from "react-router-dom";
 
 const SelectModAndOperation = () => {

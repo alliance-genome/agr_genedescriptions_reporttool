@@ -11,7 +11,7 @@ const OperationSelector = (props) => {
         <div>
             <ToggleButtonGroup type="radio"  name="options" defaultValue={props.selectedOperation === 'diff' ? 1 : props.selectedOperation === 'download' ? 2 : 3}>
                 <ToggleButton variant="outline-secondary" value={1} onClick={() => props.setSelectedOperation('diff')}>Compare Files</ToggleButton>
-                <ToggleButton variant="outline-secondary" value={2} onClick={() => props.setSelectedOperation('download')}>Download Files</ToggleButton>
+                <ToggleButton variant="outline-secondary" value={2} onClick={() => props.setSelectedOperation('download')}>Download File</ToggleButton>
                 <ToggleButton variant="outline-secondary" value={3} onClick={() => props.setSelectedOperation('view')}>View File</ToggleButton>
             </ToggleButtonGroup>
         </div>

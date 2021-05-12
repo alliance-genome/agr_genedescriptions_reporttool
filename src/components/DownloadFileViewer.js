@@ -2,7 +2,7 @@ import React, {useEffect, useState} from 'react';
 import {connect} from "react-redux";
 import {getSelectedFilesInfo, getSelectedMod} from "../redux/selectors";
 import {generateFmsJsonUrl} from "../lib";
-import {Button, Col, Container, Row} from "react-bootstrap";
+import {Col, Container, Row} from "react-bootstrap";
 
 const DownloadFileViewer = (props) => {
 
