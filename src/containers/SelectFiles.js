@@ -5,6 +5,7 @@ import {getSelectedOperation} from "../redux/selectors";
 import DiffSelector from "../components/DiffSelector";
 import ViewFileSelector from "../components/ViewFileSelector";
 import {Link} from "react-router-dom";
+import DownloadFileSelector from "../components/DownloadFileSelector";
 
 const SelectFiles = (props) => {
     return (
@@ -12,11 +13,9 @@ const SelectFiles = (props) => {
             <Row><Col>&nbsp;</Col></Row>
             <Row className="justify-content-center">
                 <Col xs="auto">
-                    {props.selectedOperation === 'diff' ?
-                        <DiffSelector />
-                        :
-                        <ViewFileSelector />
-                    }
+                    {props.selectedOperation === 'diff' ? <DiffSelector /> : null}
+                    {props.selectedOperation === 'download' ? <DownloadFileSelector /> : null}
+                    {props.selectedOperation === 'view' ? <ViewFileSelector /> : null}
                 </Col>
             </Row>
             <Row><Col>&nbsp;</Col></Row>
