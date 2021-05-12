@@ -2,7 +2,7 @@ import React, {useEffect, useState} from 'react';
 import {connect} from "react-redux";
 import {getSelectedFilesInfo, getSelectedMod} from "../redux/selectors";
 import {generateFmsJsonUrl} from "../lib";
-import {Button} from "react-bootstrap";
+import {Button, Col, Container, Row} from "react-bootstrap";
 
 const DownloadFileViewer = (props) => {
 
@@ -28,12 +28,19 @@ const DownloadFileViewer = (props) => {
     }, [props.selectedFileInfo]);
 
     return (
-        <div>
-            {showError ? 'File not selected' :
-            <>
-                <a href={downloadLinkUrl}>{downloadLinkText}</a>
-            </>}
-        </div>
+        <Container fluid>
+            <Row className="justify-content-center">
+                <Col xs="auto">
+                    <h5>Download File</h5>
+                </Col>
+            </Row>
+            <Row className="justify-content-center">
+                <Col xs="auto">
+                {showError ? 'File not selected' :
+                    <a href={downloadLinkUrl}>{downloadLinkText}</a>}
+                </Col>
+            </Row>
+        </Container>
 
     );
 }
