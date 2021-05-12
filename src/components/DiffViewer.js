@@ -32,7 +32,7 @@ const DiffViewer = (props) => {
     }, [props.selectedFilesInfo]);
 
     useEffect(() => {
-        if (props.filesContent[0] !== undefined && props.filesContent[1] !== undefined) {
+        if (props.filesContent[0] !== undefined && props.filesContent[1] !== undefined && props.areFilesContentCurrent) {
             setIsLoading(true);
             processDataCompare(props.filesContent[0], props.filesContent[1]).then(res => {
                 setIsLoading(false);
