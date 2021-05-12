@@ -2,12 +2,14 @@ import React, {useEffect} from 'react';
 import {connect} from "react-redux";
 import {Button, Col, Container, Row} from "react-bootstrap";
 import {getSelectedFilesInfo, getSelectedOperation} from "../redux/selectors";
-import {Link} from "react-router-dom";
+import {Link, useLocation} from "react-router-dom";
 import DiffViewer from "../components/DiffViewer";
 import ViewFileViewer from "../components/ViewFileViewer";
 import DownloadFileViewer from "../components/DownloadFileViewer";
 
 const DisplayResults = (props) => {
+
+    const location = useLocation();
 
     useEffect(() => {
 
@@ -27,7 +29,7 @@ const DisplayResults = (props) => {
             <Row><Col>&nbsp;</Col></Row>
             <Row className="justify-content-center">
                 <Col xs="auto">
-                    <Link to="/file_selection"><Button variant="outline-success">Previous</Button></Link>&nbsp;
+                    <Link to={{ pathname: "/file_selection", search: location.search}}><Button variant="outline-success">Previous</Button></Link>&nbsp;
                 </Col>
             </Row>
         </Container>

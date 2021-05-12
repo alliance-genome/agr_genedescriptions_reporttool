@@ -41,7 +41,7 @@ export const fetchModsList = (selectedMod) => {
         let mods = [...new Set(arrayFiles.map(arrayFile =>
             arrayFile.match(/gene-descriptions\/(.*?)\/\d{8}\/(\d{8})_([\w]*?)\.json/)[3]))];
         dispatch(setModsList(mods))
-        if (selectedMod !== null) {
+        if (selectedMod !== undefined) {
             dispatch(setSelectedMod(selectedMod));
         } else {
             dispatch(setSelectedMod(mods[0]))

@@ -2,18 +2,30 @@ import { connect } from 'react-redux'
 import '../index.css';
 import {getHtmlVar} from "../lib";
 import React, {useEffect} from 'react';
-import {BrowserRouter as Router, Switch, Route} from 'react-router-dom';
-import {fetchFilesFromFMS, fetchModsList} from "../redux/actions";
+import {Switch, Route, Redirect, useLocation} from 'react-router-dom';
+import {fetchFilesFromFMS, fetchModsList, setSelectedMod} from "../redux/actions";
 import SelectModAndOperation from "./SelectModAndOperation";
 import SelectFiles from "./SelectFiles";
 import {getLatestFilesOnly, getSelectedMod} from "../redux/selectors";
 import DisplayResults from "./DisplayResults";
 import TopNavBar from "../components/TopNavBar";
+import queryString from 'query-string';
+
 
 const Main = (props) => {
 
+    const location = useLocation();
+
     useEffect(() => {
-        props.fetchModsList(getHtmlVar().get('mod'));
+        if (location.search !== undefined) {
+            let params = queryString.parse(location.search)
+            if ('mod' in params) {
+                props.fetchModsList(params.mod);
+                return
+            }
+        }
+        props.fetchModsList();
+
     }, [])
 
     useEffect(() => {
@@ -24,7 +36,7 @@ const Main = (props) => {
 
 
     return (
-        <Router>
+        <>
             <TopNavBar />
             <Switch>
                 <Route path="/mod_selection">
@@ -37,10 +49,10 @@ const Main = (props) => {
                     <DisplayResults />
                 </Route>
                 <Route path="/">
-                    <SelectModAndOperation />
+                    <Redirect to={{ pathname: "/mod_selection", search: location.search}} />
                 </Route>
             </Switch>
-        </Router>
+        </>
     );
 }
 
@@ -49,4 +61,4 @@ const mapStateToProps = state => ({
     latestFilesOnly: getLatestFilesOnly(state)
 });
 
-export default connect(mapStateToProps, {fetchModsList, fetchFilesFromFMS})(Main)
+export default connect(mapStateToProps, {fetchModsList, fetchFilesFromFMS, setSelectedMod})(Main)

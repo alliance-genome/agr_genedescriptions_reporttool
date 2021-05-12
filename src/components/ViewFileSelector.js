@@ -36,7 +36,7 @@ const ViewFileSelector = (props) => {
             <Row>
                 <Col xs="auto">
                     <h6>Select file to view</h6>
-                    <Form.Control as="select" htmlSize={props.fileNameList.length} defaultValue={JSON.stringify(props.selectedFileInfo)}
+                    <Form.Control as="select" htmlSize={props.fileNameList.length} value={JSON.stringify(props.selectedFileInfo)}
                                   onChange={(event) => {
                                       props.setSelectedFileInfo(JSON.parse(event.target.value), 0);
                                       props.setSelectedFileInfo(undefined, 1)

@@ -4,10 +4,13 @@ import {Button, Col, Container, Row} from "react-bootstrap";
 import {getSelectedOperation} from "../redux/selectors";
 import DiffSelector from "../components/DiffSelector";
 import ViewFileSelector from "../components/ViewFileSelector";
-import {Link} from "react-router-dom";
+import {Link, useLocation} from "react-router-dom";
 import DownloadFileSelector from "../components/DownloadFileSelector";
 
 const SelectFiles = (props) => {
+
+    const location = useLocation();
+
     return (
         <Container fluid>
             <Row><Col>&nbsp;</Col></Row>
@@ -22,8 +25,8 @@ const SelectFiles = (props) => {
             <Row><Col>&nbsp;</Col></Row>
             <Row className="justify-content-center">
                 <Col xs="auto">
-                    <Link to="/mod_selection"><Button variant="outline-success">Previous</Button></Link>&nbsp;
-                    <Link to="/display_results"><Button variant="outline-success">Next</Button></Link>
+                    <Link to={{ pathname: "/mod_selection", search: location.search}}><Button variant="outline-success">Previous</Button></Link>&nbsp;
+                    <Link to={{ pathname: "/display_results", search: location.search}}><Button variant="outline-success">Next</Button></Link>
                 </Col>
             </Row>
         </Container>

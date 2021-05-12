@@ -2,7 +2,7 @@ import React from 'react';
 import {connect} from "react-redux";
 import {getModsList, getSelectedMod} from "../redux/selectors";
 import {setSelectedMod} from "../redux/actions";
-import {Col, Container, Row} from "react-bootstrap";
+import {Col, Container, Form, Row} from "react-bootstrap";
 
 const ModSelector = (props) => {
 
@@ -10,10 +10,10 @@ const ModSelector = (props) => {
         <Container>
             <Row className="justify-content-center">
                 <Col xs="auto">
-                    <select name="mod" id="mod" size={props.modsList.length} defaultValue={props.selectedMod}
+                    <Form.Control as="select" htmlSize={props.modsList.length} value={props.selectedMod}
                             onChange={(event) => props.setSelectedMod(event.target.value)}>
                         {[...props.modsList].map(mod => <option key={mod} value={mod}>{mod}</option>)}
-                    </select>
+                    </Form.Control>
                 </Col>
             </Row>
         </Container>

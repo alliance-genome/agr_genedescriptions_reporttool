@@ -11,7 +11,7 @@ const DownloadFileSelector = (props) => {
             <h6>Select file to download</h6>
             <Form.Control as="select" htmlSize={props.fileNameList.length}
                           onChange={(event) => props.setSelectedFileInfo(JSON.parse(event.target.value), 0)}
-                          defaultValue={JSON.stringify(props.selectedFileInfo)}>
+                          value={JSON.stringify(props.selectedFileInfo)}>
                 {props.fileNameList.map(fileObj =>
                     <option
                         value={JSON.stringify(fileObj)}>{fileObj.releaseVersion + ' - ' + fileObj.releaseType + ' - ' + fileObj.uploadDate}

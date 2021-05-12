@@ -1,6 +1,8 @@
 import React from 'react';
 import axios from "axios";
 import pako from 'pako';
+import queryString from 'query-string';
+import {createBrowserHistory} from 'history'
 
 export function generateFmsJsonUrl(url, mod) {
     let baseUrl = 'https://download.alliancegenome.org/';
@@ -73,4 +75,38 @@ export const requestAndGunzipBodyIfNecessary = (url) => {
             });
     })
 }
+
+function preserveQueryParameters(history, preserve, location) {
+    const currentQuery = queryString.parse(history.location.search);
+    if (currentQuery) {
+        const preservedQuery = {};
+        for (let p of preserve) {
+            const v = currentQuery[p];
+            if (v) {
+                preservedQuery[p] = v;
+            }
+        }
+        if (location.search) {
+            Object.assign(preservedQuery, queryString.parse(location.search));
+        }
+        location.search = queryString.stringify(preservedQuery);
+    }
+    return location;
+}
+
+function createLocationDescriptorObject(location, state) {
+    return typeof location === 'string' ? { pathname: location, state } : location;
+}
+
+function createPreserveQueryHistory(createHistory, queryParameters) {
+    return (options) => {
+        const history = createHistory(options);
+        const oldPush = history.push, oldReplace = history.replace;
+        history.push = (path, state) => oldPush.apply(history, [preserveQueryParameters(history, queryParameters, createLocationDescriptorObject(path, state))]);
+        history.replace = (path, state) => oldReplace.apply(history, [preserveQueryParameters(history, queryParameters, createLocationDescriptorObject(path, state))]);
+        return history;
+    };
+}
+
+export const history = createPreserveQueryHistory(createBrowserHistory, ['locale', 'token', 'returnTo'])();
 

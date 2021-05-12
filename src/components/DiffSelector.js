@@ -27,7 +27,7 @@ const DiffSelector = (props) => {
                         <Col xs="auto">
                             <h6>Select old file</h6>
                             <FormControl as="select" htmlSize={props.fileNameList.length}
-                                         defaultValue={props.selectedFilesInfo[0] !== undefined ? JSON.stringify(props.selectedFilesInfo[0]) : null}
+                                         value={props.selectedFilesInfo[0] !== undefined ? JSON.stringify(props.selectedFilesInfo[0]) : null}
                                          onChange={(event) => props.setSelectedFileInfo(JSON.parse(event.target.value), 0)}>
                                 {props.fileNameList.map(fileObj =>
                                     <option
@@ -39,7 +39,7 @@ const DiffSelector = (props) => {
                         <Col xs="auto">
                             <h6>Select new file</h6>
                             <FormControl as="select" htmlSize={props.fileNameList.length}
-                                         defaultValue={props.selectedFilesInfo[1] !== undefined ? JSON.stringify(props.selectedFilesInfo[1]) : null}
+                                         value={props.selectedFilesInfo[1] !== undefined ? JSON.stringify(props.selectedFilesInfo[1]) : null}
                                          onChange={(event) => props.setSelectedFileInfo(JSON.parse(event.target.value), 1)}>
                                 {props.fileNameList.map(fileObj =>
                                     <option
@@ -51,7 +51,7 @@ const DiffSelector = (props) => {
                         <Col xs="auto">
                             <h6>Select field to compare</h6>
                             <FormControl as="select" htmlSize={props.diffFields.length}
-                                         defaultValue={props.selectedDiffField}
+                                         value={props.selectedDiffField}
                                          onChange={(e) => props.setSelectedDiffField(e.target.value)}>
                                 {props.diffFields.map((diffField) => <option key={diffField.name}
                                                                              value={diffField.name}>{diffField.label}</option>)}
