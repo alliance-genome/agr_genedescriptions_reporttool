@@ -31,13 +31,16 @@ const initialState = {
     viewPageNum: 1,
     viewFilterOntologyID: '',
     viewFilterMinFinalExpGOIDOp: '>=',
-    viewFilterMinFinalExpGOIDCount: 0
+    viewFilterMinFinalExpGOIDCount: 0,
+    currentFilesContentInfo: [undefined, undefined]
 };
 
 export default createReducer(initialState, {
     SET_SELECTED_MOD: (state, action) => {
-        if (action.payload.mod !== undefined) {
+        if (action.payload.mod !== undefined && state.selectedMod !== action.payload.mod) {
             state.selectedMod = action.payload.mod;
+            state.selectedFilesInfo = [undefined, undefined]
+            state.filesContent = [undefined, undefined]
         }
     },
     SET_MODS_LIST: (state, action) => {
@@ -88,8 +91,9 @@ export default createReducer(initialState, {
         state.fileLoadingError = false;
     },
     FETCH_FILE_CONTENT_SUCCESS: (state, action) => {
-        state.fileLoading = false;
         state.descriptionFilesContent[action.payload.fileOrder] = action.payload.result;
+        state.currentFilesContentInfo[action.payload.fileOrder] = state.selectedFilesInfo[action.payload.fileOrder];
+        state.fileLoading = false;
         state.fileLoadingError = false;
     },
     FETCH_FILE_CONTENT_ERROR: (state, action) => {

@@ -1,6 +1,6 @@
 import React from 'react';
 import {connect} from "react-redux";
-import {Col, Container, FormControl, Row, Spinner} from "react-bootstrap";
+import {Col, Container, Form, FormControl, Row, Spinner} from "react-bootstrap";
 import {
     getDiffFields,
     getDiffFilterGeneName,
@@ -38,7 +38,7 @@ const DiffSelector = (props) => {
                         <Col xs="auto">
                             <h6>Select new file</h6>
                             <FormControl as="select" htmlSize={props.fileNameList.length}
-                                         defaultValue={props.selectedFilesInfo[0] !== undefined ? JSON.stringify(props.selectedFilesInfo[0]) : null}
+                                         defaultValue={props.selectedFilesInfo[1] !== undefined ? JSON.stringify(props.selectedFilesInfo[1]) : null}
                                          onChange={(event) => props.setSelectedFileInfo(JSON.parse(event.target.value), 1)}>
                                 {props.fileNameList.map(fileObj =>
                                     <option
@@ -48,54 +48,54 @@ const DiffSelector = (props) => {
                         </Col>
                         <Col xs="auto">
                             <h6>Select field to compare</h6>
-                            <select size={props.diffFields.length}
-                                    onChange={(e) => props.setSelectedDiffField(e.target.value)}>
+                            <FormControl as="select" htmlSize={props.diffFields.length}
+                                         defaultValue={props.selectedDiffField}
+                                         onChange={(e) => props.setSelectedDiffField(e.target.value)}>
                                 {props.diffFields.map((diffField) => <option key={diffField.name}
                                                                              value={diffField.name}>{diffField.label}</option>)}
-                            </select>
+                            </FormControl>
                         </Col>
                     </Row>
+                    <Row><Col>&nbsp;</Col></Row>
                     <Row className="justify-content-center">
                         <Col xs="auto">
-                            <label>
-                                Optional gene name filter:<br/>
-                                <textarea
-                                    name="diffGeneNameFilter"
-                                    id="diffGeneNameFilter"
-                                    type="text"
-                                    size="100"
-                                    value={props.diffFilterGeneName}
-                                    onChange={(e) => props.setDiffFilterGeneName(e.target.value)}/><br/>
-                                <input
-                                    name="checkboxDiffGeneNameFilter"
-                                    type="checkbox"
-                                    checked={props.diffFilterGeneNameCS}
-                                    onChange={(e) => props.setDiffFilterGeneNameCS(e.target.checked)}/>
-                                Case sensitive<br/>
-                                <input
-                                    name="checkboxDiffGeneNameSubstring"
-                                    type="checkbox"
-                                    checked={props.diffFilterGeneNameSubstr}
-                                    onChange={(e) => props.setDiffFilterGeneNameSubstr(e.target.checked)}/>
-                                Substring Match<br/>
-                            </label>
-                            <br/>
-                            <label>
-                                Optional phrase filter:<br/>
-                                <textarea
-                                    name="diffKeywordFilter"
-                                    id="diffKeywordFilter"
-                                    type="text"
-                                    size="100"
-                                    value={props.diffFilterPhrase}
-                                    onChange={(e) => props.setDiffFilterPhrase(e.target.value)}/><br/>
-                                <input
-                                    name="checkboxDiffKeywordFilter"
-                                    type="checkbox"
-                                    checked={props.diffFilterPhraseCS}
-                                    onChange={(e) => props.setDiffFilterPhraseCS(e.target.value)}/>
-                                Case sensitive<br/>
-                            </label>
+                            <Form.Label>Optional gene name filter:</Form.Label>
+                            <Form.Control as="textarea"
+                                          name="diffGeneNameFilter"
+                                          id="diffGeneNameFilter"
+                                          type="text"
+                                          size="100"
+                                          value={props.diffFilterGeneName}
+                                          onChange={(e) => props.setDiffFilterGeneName(e.target.value)}/><br/>
+                            <Form.Check
+                                name="checkboxDiffGeneNameFilter"
+                                type="checkbox"
+                                checked={props.diffFilterGeneNameCS}
+                                onChange={(e) => props.setDiffFilterGeneNameCS(e.target.checked)}
+                                label="Case sensitive"
+                            />
+                            <Form.Check
+                                name="checkboxDiffGeneNameSubstring"
+                                type="checkbox"
+                                checked={props.diffFilterGeneNameSubstr}
+                                onChange={(e) => props.setDiffFilterGeneNameSubstr(e.target.checked)}
+                                label="Substring match"
+                            />
+                        </Col>
+                        <Col xs="auto">
+                            <Form.Label>Optional phrase filter:</Form.Label>
+                            <Form.Control as="textarea"
+                                          name="diffKeywordFilter"
+                                          id="diffKeywordFilter"
+                                          type="text"
+                                          size="100"
+                                          value={props.diffFilterPhrase}
+                                          onChange={(e) => props.setDiffFilterPhrase(e.target.value)}/><br/>
+                            <Form.Check
+                                name="checkboxDiffKeywordFilter"
+                                type="checkbox"
+                                checked={props.diffFilterPhraseCS}
+                                onChange={(e) => props.setDiffFilterPhraseCS(e.target.value)} label="Case sensitive"/>
                         </Col>
                     </Row>
                 </> : <Spinner animation="grow"/>}

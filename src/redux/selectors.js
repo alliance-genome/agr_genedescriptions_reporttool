@@ -20,3 +20,4 @@ export const getViewPageNum = store => store ? store.viewPageNum : 1;
 export const getViewFilterOntologyID = store => store ? store.viewFilterOntologyID : '';
 export const getViewFilterMinFinalExpGOIDOp = store => store ? store.viewFilterMinFinalExpGOIDOp : '>=';
 export const getViewFilterMinFinalExpGOIDCount = store => store ? store.viewFilterMinFinalExpGOIDCount : 0;
+export const areFilesContentCurrent = store => store ? store.selectedFilesInfo[0] === store.currentFilesContentInfo[0] && store.selectedFilesInfo[1] === store.currentFilesContentInfo[1] : false;
