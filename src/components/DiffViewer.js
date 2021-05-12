@@ -9,7 +9,7 @@ import {
     getFilesContent,
     getSelectedFilesInfo,
     getSelectedMod,
-    areFilesContentCurrent
+    areFilesContentCurrent, getFileLoadingError
 } from "../redux/selectors";
 import {connect} from "react-redux";
 import {Col, Container, Row, Spinner} from "react-bootstrap";
@@ -205,9 +205,11 @@ const DiffViewer = (props) => {
             </Row>
             <Row className="justify-content-center">
                 <Col xs="auto">
-                    {isLoading ?
+                    {isLoading && !showError && !props.fileLoadingError ?
                         <Spinner animation="grow" />
                         : null}
+                    {props.fileLoadingError ?
+                        'Error: cannot download file' : null}
                     {showError ?
                         'No files selected' : null}
                     {!isLoading && !showError ?
@@ -278,7 +280,8 @@ const mapStateToProps = state => ({
     diffFilterPhraseCS: getDiffFilterPhraseCS(state),
     selectedFilesInfo: getSelectedFilesInfo(state),
     filesContent: getFilesContent(state),
-    areFilesContentCurrent: areFilesContentCurrent(state)
+    areFilesContentCurrent: areFilesContentCurrent(state),
+    fileLoadingError: getFileLoadingError(state)
 });
 
 export default connect(mapStateToProps, {fetchFileContent})(DiffViewer)

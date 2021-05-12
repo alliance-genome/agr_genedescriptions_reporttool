@@ -22,3 +22,4 @@ export const getViewFilterMinFinalExpGOIDOp = store => store ? store.viewFilterM
 export const getViewFilterMinFinalExpGOIDCount = store => store ? store.viewFilterMinFinalExpGOIDCount : 0;
 export const areFilesContentCurrent = store => store ? store.selectedFilesInfo[0] === store.currentFilesContentInfo[0] && store.selectedFilesInfo[1] === store.currentFilesContentInfo[1] : false;
 export const getViewSelectedDisplayFields = store => store ? store.viewSelectedDisplayFields : new Set();
+export const getFileLoadingError = store => store ? store.fileLoadingError : false;
