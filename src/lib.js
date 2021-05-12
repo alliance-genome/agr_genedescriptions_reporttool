@@ -56,12 +56,16 @@ export const getS3PathsFromFms = (testOrLive, mod) => {
 
 export const requestAndGunzipBodyIfNecessary = (url) => {
     return new Promise((resolve, reject) => {
-        axios.get(url, { responseType: 'arraybuffer' })
+        let config = {};
+        if (url.endsWith(".gz")) {
+            config = { responseType: 'arraybuffer' }
+        }
+        axios.get(url, config)
             .then(function (response) {
                 if (response.headers['content-type'] === 'application/x-gzip') {
                     resolve(JSON.parse(pako.inflate(response.data, {to: 'string'})));
                 } else {
-                    resolve(JSON.parse(response.data));
+                    resolve(response.data);
                 }
             })
             .catch(function (error) {
