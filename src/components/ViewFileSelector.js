@@ -118,11 +118,7 @@ const ViewFileSelector = (props) => {
                         size="100"
                         value={props.viewFilterOntologyID}
                         onChange={(e) => props.setViewFilterOntologyID(e.target.value)} />
-                </Col>
-            </Row>
-            <Row><Col>&nbsp;</Col></Row>
-            <Row>
-                <Col xs="auto">
+                    <br/>
                     <h6>Count of set_final_experimental_go_ids</h6>
                     <Form>
                         <Row>
@@ -146,6 +142,7 @@ const ViewFileSelector = (props) => {
                     </Form>
                 </Col>
             </Row>
+            <Row><Col>&nbsp;</Col></Row>
             <Row><Col>&nbsp;</Col></Row>
             <Row>
                 <Col xs="auto">
