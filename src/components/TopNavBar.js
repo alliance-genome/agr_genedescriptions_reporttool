@@ -9,7 +9,7 @@ const TopNavBar = (props) => {
     return (
         <Navbar sticky="top" bg="dark" variant="dark" className="px-4">
             <Navbar.Brand href="/">Gene Descriptions Report Tool</Navbar.Brand>
-            <Navbar.Toggle aria-controls="basic-navbar-nav" />
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
             <Navbar.Collapse id="basic-navbar-nav">
                 <Nav className="mr-auto" activeKey={useLocation().pathname}>
                     <Nav.Link eventKey="/mod_selection" as={Link} to="/mod_selection">1. Select MOD/Mode</Nav.Link>
@@ -17,9 +17,9 @@ const TopNavBar = (props) => {
                     <Nav.Link eventKey="/display_results" as={Link} to="/display_results">3. Display Results</Nav.Link>
                 </Nav>
                 <Nav>
-                    <Nav.Item as={Badge} variant="success" className="px-2">Selected MOD: {props.selectedMod}</Nav.Item>
+                    <Nav.Item as={Badge} variant="success" className="px-2"><h6>Selected MOD: {props.selectedMod}</h6></Nav.Item>
                     <Nav.Item className="px-1"/>
-                    <Nav.Item as={Badge} variant="success" className="px-2">Selected Mode: {props.selectedOperation}</Nav.Item>
+                    <Nav.Item as={Badge} variant="success" className="px-2"><h6>Selected Mode: {props.selectedOperation}</h6></Nav.Item>
                 </Nav>
             </Navbar.Collapse>
         </Navbar>
