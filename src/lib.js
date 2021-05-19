@@ -108,5 +108,7 @@ function createPreserveQueryHistory(createHistory, queryParameters) {
     };
 }
 
+export const statFieldIsFirstOption = field => !field.startsWith('average') && !field.includes('more_than') && !field.includes('covering_multiple') && !field.includes('expression_cluster') && !field.includes('protein_domain') && ! field.includes('sister_species')
+
 export const history = createPreserveQueryHistory(createBrowserHistory, ['locale', 'token', 'returnTo'])();
 

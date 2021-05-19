@@ -12,8 +12,9 @@ import {
     areFilesContentCurrent, getFileLoadingError
 } from "../redux/selectors";
 import {connect} from "react-redux";
-import {Col, Container, Row, Spinner} from "react-bootstrap";
+import {Button, Col, Container, Row, Spinner} from "react-bootstrap";
 import {fetchFileContent} from "../redux/actions";
+import {statFieldIsFirstOption} from "../lib";
 
 
 const DiffViewer = (props) => {
@@ -23,6 +24,7 @@ const DiffViewer = (props) => {
     const [textDivDiffResults, setTextDivDiffResults] = useState("");
     const [isLoading, setIsLoading] = useState(true);
     const [showError, setShowError] = useState(false);
+    const [showAllGeneralStats, setShowAllGeneralStats] = useState(false);
 
     useEffect(() => {
         if (props.selectedFilesInfo[0] !== undefined && props.selectedFilesInfo[1] !== undefined && !props.areFilesContentCurrent) {
@@ -226,15 +228,19 @@ const DiffViewer = (props) => {
                                 </tr>
                                 </thead>
                                 <tbody id="table_diff_stats_body" name="table_diff_stats_body">
-                                {rowsTableDiffStats.map((item, idx) => (
-                                    <tr id="addr0" key={idx}>
-                                        <td>{rowsTableDiffStats[idx].field}</td>
-                                        <td>{rowsTableDiffStats[idx].date1}</td>
-                                        <td>{rowsTableDiffStats[idx].date2}</td>
-                                    </tr>
-                                ))}
+                                {rowsTableDiffStats.filter(item => showAllGeneralStats || statFieldIsFirstOption(item.field)).map(item => (
+                                        <tr>
+                                            <td>{item.field}</td>
+                                            <td>{item.date1}</td>
+                                            <td>{item.date2}</td>
+                                        </tr>
+                                    ))}
                                 </tbody>
                             </table>
+                            <br/>
+                            <Button variant="outline-success" onClick={() => setShowAllGeneralStats(!showAllGeneralStats)}>{showAllGeneralStats ? "Show less stats" : "Show more stats"}</Button>
+                            <br/>
+                            <br/>
                             <div
                                 name="div_diff_results_text"
                                 id="div_diff_results_text"

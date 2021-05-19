@@ -17,8 +17,9 @@ import {
     getViewFilterOntologyID,
     getViewPageNum, getViewSelectedDisplayFields
 } from "../redux/selectors";
-import {Col, Container, Row, Spinner} from "react-bootstrap";
+import {Button, Col, Container, Row, Spinner} from "react-bootstrap";
 import {fetchFileContent, setViewPageNum} from "../redux/actions";
+import {statFieldIsFirstOption} from "../lib";
 
 const ViewFileViewer = (props) => {
 
@@ -28,6 +29,7 @@ const ViewFileViewer = (props) => {
     const [showLabelFieldsMatchCount, setShowLabelFieldsMatchCount] = useState({});
     const [isLoading, setIsLoading] = useState(true);
     const [showError, setShowError] = useState(false);
+    const [showAllGeneralStats, setShowAllGeneralStats] = useState(false);
 
     const handleSubmitLoadNextPage = () => {
         let nextPage = props.viewPageNum + 1;
@@ -267,14 +269,18 @@ const ViewFileViewer = (props) => {
                                     </tr>
                                     </thead>
                                     <tbody id="table_load_stats_body" name="table_load_stats_body">
-                                    {rowsTableLoadStats.map((item, idx) => (
-                                        <tr id="addr0" key={idx}>
-                                            <td>{rowsTableLoadStats[idx].field}</td>
-                                            <td>{rowsTableLoadStats[idx].value}</td>
+                                    {rowsTableLoadStats.filter(item => showAllGeneralStats || statFieldIsFirstOption(item.field)).map(item => (
+                                        <tr>
+                                            <td>{item.field}</td>
+                                            <td>{item.value}</td>
                                         </tr>
                                     ))}
                                     </tbody>
                                 </table>
+                                <br/>
+                                <Button variant="outline-success" onClick={() => setShowAllGeneralStats(!showAllGeneralStats)}>{showAllGeneralStats ? "Show less stats" : "Show more stats"}</Button>
+                                <br/>
+                                <br/>
                             </label>
                             <br />
                             <label>
