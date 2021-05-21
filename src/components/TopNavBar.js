@@ -6,6 +6,9 @@ import {Link} from "react-router-dom";
 import {getSelectedMod, getSelectedOperation} from "../redux/selectors";
 
 const TopNavBar = (props) => {
+
+    const location = useLocation();
+
     return (
         <Navbar sticky="top" bg="dark" variant="dark" className="px-4">
             <Navbar.Brand href="/">Gene Descriptions Report Tool</Navbar.Brand>
@@ -19,7 +22,7 @@ const TopNavBar = (props) => {
                 <Nav>
                     <Nav.Item as={Badge} variant="success" className="px-2"><h6>Selected MOD: {props.selectedMod}</h6></Nav.Item>
                     <Nav.Item className="px-1"/>
-                    <Nav.Item as={Badge} variant="success" className="px-2"><h6>Selected Mode: {props.selectedOperation}</h6></Nav.Item>
+                    {location.pathname !== "/dashboard" ? <Nav.Item as={Badge} variant="success" className="px-2"><h6>Selected Mode: {props.selectedOperation}</h6></Nav.Item> : null}
                 </Nav>
             </Navbar.Collapse>
         </Navbar>

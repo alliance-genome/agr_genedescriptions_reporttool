@@ -1,4 +1,4 @@
-import {generateFmsJsonUrl, getS3PathsFromFms, requestAndGunzipBodyIfNecessary} from "../lib";
+import {generateFmsJsonUrl, getS3PathsFromFms, getStatsFiles, requestAndGunzipBodyIfNecessary} from "../lib";
 
 export const SET_SELECTED_MOD = "SET_SELECTED_MOD";
 export const SET_MODS_LIST = "SET_MODS_LIST";
@@ -25,6 +25,9 @@ export const SET_VIEW_FILTER_MIN_FINAL_EXP_GO_ID_OP = "SET_VIEW_FILTER_MIN_FINAL
 export const SET_VIEW_FILTER_MIN_FINAL_EXP_GO_ID_COUNT = "SET_VIEW_FILTER_MIN_FINAL_EXP_GO_ID_COUNT";
 export const ADD_VIEW_SELECTED_DISPLAY_FIELD = "ADD_VIEW_SELECTED_DISPLAY_FIELD";
 export const REMOVE_VIEW_SELECTED_DISPLAY_FIELD = "REMOVE_VIEW_SELECTED_DISPLAY_FIELD";
+export const FETCH_STATS_FILES_REQUEST = "FETCH_STATS_FILES_REQUEST";
+export const FETCH_STATS_FILES_SUCCESS = "FETCH_STATS_FILES_SUCCESS";
+export const FETCH_STATS_FILES_ERROR = "FETCH_STATS_FILES_ERROR";
 
 
 export const fetchModsList = (selectedMod) => {
@@ -84,6 +87,35 @@ export const fetchFileContent = (s3Path, mod, fileOrder = 0) => {
         });
     }
 }
+
+export const fetchStatsFiles = (mod) => {
+    return dispatch => {
+        dispatch(fetchStatsFilesRequest());
+        getStatsFiles(mod).then(res => {
+            dispatch(fetchStatsFilesSuccess(res.statsFile1.s3Path, JSON.stringify(res.statsFile1.content), res.statsFile2.s3Path, JSON.stringify(res.statsFile2.content)));
+        }).catch(error => {
+            dispatch(fetchStatsFilesError());
+        })
+    }
+}
+
+export const fetchStatsFilesRequest = () => ({
+    type: FETCH_STATS_FILES_REQUEST
+});
+
+export const fetchStatsFilesSuccess = (statsFile1S3Path, statsFile1Content, statsFile2S3Path, statsFile2Content) => ({
+    type: FETCH_STATS_FILES_SUCCESS,
+    payload: {
+        statsFile1S3Path: statsFile1S3Path,
+        statsFile1Content: statsFile1Content,
+        statsFile2S3Path: statsFile2S3Path,
+        statsFile2Content: statsFile2Content
+    }
+});
+
+export const fetchStatsFilesError = () => ({
+    type: FETCH_STATS_FILES_ERROR
+});
 
 export const setSelectedMod = mod => ({
     type: SET_SELECTED_MOD,

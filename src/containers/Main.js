@@ -1,6 +1,5 @@
 import { connect } from 'react-redux'
 import '../index.css';
-import {getHtmlVar} from "../lib";
 import React, {useEffect} from 'react';
 import {Switch, Route, Redirect, useLocation} from 'react-router-dom';
 import {fetchFilesFromFMS, fetchModsList, setSelectedMod} from "../redux/actions";
@@ -10,6 +9,7 @@ import {getLatestFilesOnly, getSelectedMod} from "../redux/selectors";
 import DisplayResults from "./DisplayResults";
 import TopNavBar from "../components/TopNavBar";
 import queryString from 'query-string';
+import Dashboard from "./Dashboard";
 
 
 const Main = (props) => {
@@ -25,7 +25,6 @@ const Main = (props) => {
             }
         }
         props.fetchModsList();
-
     }, [])
 
     useEffect(() => {
@@ -48,8 +47,11 @@ const Main = (props) => {
                 <Route path="/display_results">
                     <DisplayResults />
                 </Route>
-                <Route path="/">
-                    <Redirect to={{ pathname: "/mod_selection", search: location.search}} />
+                <Route exact path="/">
+                    <Redirect to={{ pathname: "/dashboard", search: location.search}} />
+                </Route>
+                <Route path="/dashboard">
+                    <Dashboard />
                 </Route>
             </Switch>
         </>

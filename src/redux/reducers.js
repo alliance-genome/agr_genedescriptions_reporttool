@@ -40,7 +40,11 @@ const initialState = {
         go_description: false,
         orthology_description: false,
         tissue_expression_description: false
-    }
+    },
+    statsFile1: undefined,
+    statsFile2: undefined,
+    statsFilesAreLoading: false,
+    statsFilesError: false
 };
 
 export default createReducer(initialState, {
@@ -134,5 +138,21 @@ export default createReducer(initialState, {
     },
     REMOVE_VIEW_SELECTED_DISPLAY_FIELD: (state, action) => {
         state.viewSelectedDisplayFields[action.payload.selectedDisplayField] = false;
-    }
+    },
+    FETCH_STATS_FILES_REQUEST: (state, action) => {
+        state.statsFilesAreLoading = true;
+        state.statsFilesError = false;
+    },
+    FETCH_STATS_FILES_SUCCESS: (state, action) => {
+        state.statsFilesAreLoading = false;
+        state.statsFile1S3Path = action.payload.statsFile1S3Path;
+        state.statsFile1Content = action.payload.statsFile1Content;
+        state.statsFile2S3Path = action.payload.statsFile2S3Path;
+        state.statsFile2Content = action.payload.statsFile2Content;
+        state.statsFilesError = false;
+    },
+    FETCH_STATS_FILES_ERROR: (state, action) => {
+        state.statsFilesAreLoading = false;
+        state.statsFilesError = true;
+    },
 });

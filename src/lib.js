@@ -56,6 +56,39 @@ export const getS3PathsFromFms = (testOrLive, mod) => {
     });
 }
 
+export const getFirstStatsFilePathMatchingVersion = async (versionsArray, mod) => {
+    while (versionsArray.length > 0) {
+        let selectedVersion = versionsArray.pop();
+        let latestStatFile = await axios.get('https://fms.alliancegenome.org/api/datafile/by/' + selectedVersion + '/GENE-DESCRIPTION-STATS/' + mod + '?latest=true');
+        if (latestStatFile.data.length > 0 && latestStatFile.data[0].s3Path.split('/')[0] === selectedVersion) {
+            return latestStatFile.data[0].s3Path;
+        }
+    }
+    return undefined;
+}
+
+export const getStatsFiles = async (mod) => {
+    let versionsArr = await axios.get('https://fms.alliancegenome.org/api/releaseversion/all');
+    let versions = versionsArr.data.map(version => version.releaseVersion).sort();
+    let nextVersionStatFilePath = await getFirstStatsFilePathMatchingVersion(versions, mod);
+    let currentVersionStatsFilePath = await getFirstStatsFilePathMatchingVersion(versions, mod);
+    let nextVersionStatFileContent = await requestAndGunzipBodyIfNecessary('https://download.alliancegenome.org/' + nextVersionStatFilePath);
+    let currentVersionStatsContent = undefined;
+    if (currentVersionStatsFilePath !== undefined) {
+        currentVersionStatsContent = await requestAndGunzipBodyIfNecessary('https://download.alliancegenome.org/' + currentVersionStatsFilePath);
+    }
+    return {
+        statsFile1: {
+            s3Path: currentVersionStatsFilePath,
+            content: currentVersionStatsContent
+        },
+        statsFile2: {
+            s3Path: nextVersionStatFilePath,
+            content: nextVersionStatFileContent
+        }
+    };
+}
+
 export const requestAndGunzipBodyIfNecessary = (url) => {
     return new Promise((resolve, reject) => {
         let config = {};

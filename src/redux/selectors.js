@@ -23,3 +23,6 @@ export const getViewFilterMinFinalExpGOIDCount = store => store ? store.viewFilt
 export const areFilesContentCurrent = store => store ? store.selectedFilesInfo[0] === store.currentFilesContentInfo[0] && store.selectedFilesInfo[1] === store.currentFilesContentInfo[1] : false;
 export const getViewSelectedDisplayFields = store => store ? store.viewSelectedDisplayFields : new Set();
 export const getFileLoadingError = store => store ? store.fileLoadingError : false;
+export const getStatsFilesAreLoading = store => store ? store.statsFilesAreLoading : false;
+export const getStatsFilesError = store => store ? store.statsFilesError : false;
+export const getStatsFiles = store => store ? {statsFile1S3Path: store.statsFile1S3Path, statsFile1Content: store.statsFile1Content, statsFile2S3Path: store.statsFile2S3Path, statsFile2Content: store.statsFile2Content} : {statsFile1S3Path: undefined, statsFile1Content: undefined, statsFile2S3Path: undefined, statsFile2Content: undefined}
