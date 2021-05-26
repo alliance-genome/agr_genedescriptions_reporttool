@@ -11,6 +11,17 @@ const Dashboard = ({}) => {
     return (
         <Container>
             <Row><Col>&nbsp;</Col></Row>
+            <Row className="justify-content-center">
+                <Col xs="auto">
+                    <h3>Dashboard</h3>
+                </Col>
+            </Row>
+            <Row><Col>&nbsp;</Col></Row>
+            <Row className="justify-content-center">
+                <Col xs="auto">
+                    <ModSelector/>
+                </Col>
+            </Row>
             <Row><Col>&nbsp;</Col></Row>
             <Row className="justify-content-center">
                 <Col xs="auto">
@@ -19,9 +30,15 @@ const Dashboard = ({}) => {
             </Row>
             <Row className="justify-content-center">
                 <Col xs="auto">
+                    <QuickDiff />
+                </Col>
+            </Row>
+            <Row className="justify-content-center">
+                <Col xs="auto">
                     Only release/stage files are included in this quick view
                 </Col>
             </Row>
+            <Row><Col>&nbsp;</Col></Row>
             <Row className="justify-content-center">
                 <Col xs="auto">
                     Click on 'More options' to view, download, or diff file content
@@ -34,14 +51,6 @@ const Dashboard = ({}) => {
                 </Col>
             </Row>
             <Row><Col>&nbsp;</Col></Row>
-            <Row className="justify-content-center">
-                <Col xs="auto">
-                    <ModSelector/>
-                </Col>
-                <Col xs="auto">
-                    <QuickDiff />
-                </Col>
-            </Row>
             <Row><Col>&nbsp;</Col></Row>
         </Container>
     );

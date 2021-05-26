@@ -61,19 +61,19 @@ const QuickDiff = ({selectedMod, statsFiles, statsFilesAreLoading, fetchStatsFil
                                 <th><Badge variant={statsFile2Content.number_genes_with_non_null_go_description - statsFile1Content.number_genes_with_non_null_go_description >= 0 ? "success" : "danger"}>{statsFile2Content.number_genes_with_non_null_go_description - statsFile1Content.number_genes_with_non_null_go_description}</Badge></th>
                             </tr>
                             <tr>
-                                <th>GO function descriptions</th>
+                                <th>&ensp; - GO function descriptions</th>
                                 <th>{statsFile1Content.number_genes_with_non_null_go_function_description}</th>
                                 <th>{statsFile2Content.number_genes_with_non_null_go_function_description}</th>
                                 <th><Badge variant={statsFile2Content.number_genes_with_non_null_go_function_description - statsFile1Content.number_genes_with_non_null_go_function_description >= 0 ? "success" : "danger"}>{statsFile2Content.number_genes_with_non_null_go_function_description - statsFile1Content.number_genes_with_non_null_go_function_description}</Badge></th>
                             </tr>
                             <tr>
-                                <th>GO process descriptions</th>
+                                <th>&ensp; - GO process descriptions</th>
                                 <th>{statsFile1Content.number_genes_with_non_null_go_process_description}</th>
                                 <th>{statsFile2Content.number_genes_with_non_null_go_process_description}</th>
                                 <th><Badge variant={statsFile2Content.number_genes_with_non_null_go_process_description - statsFile1Content.number_genes_with_non_null_go_process_description >= 0 ? "success" : "danger"}>{statsFile2Content.number_genes_with_non_null_go_process_description - statsFile1Content.number_genes_with_non_null_go_process_description}</Badge></th>
                             </tr>
                             <tr>
-                                <th>GO component descriptions</th>
+                                <th>&ensp; - GO component descriptions</th>
                                 <th>{statsFile1Content.number_genes_with_non_null_go_component_description}</th>
                                 <th>{statsFile2Content.number_genes_with_non_null_go_component_description}</th>
                                 <th><Badge variant={statsFile2Content.number_genes_with_non_null_go_component_description - statsFile1Content.number_genes_with_non_null_go_component_description >= 0 ? "success" : "danger"}>{statsFile2Content.number_genes_with_non_null_go_component_description - statsFile1Content.number_genes_with_non_null_go_component_description}</Badge></th>
@@ -85,19 +85,19 @@ const QuickDiff = ({selectedMod, statsFiles, statsFilesAreLoading, fetchStatsFil
                                 <th><Badge variant={statsFile2Content.number_genes_with_non_null_do_description - statsFile1Content.number_genes_with_non_null_do_description >= 0 ? "success" : "danger"}>{statsFile2Content.number_genes_with_non_null_do_description - statsFile1Content.number_genes_with_non_null_do_description}</Badge></th>
                             </tr>
                             <tr>
-                                <th>DO experimental descriptions</th>
+                                <th>&ensp; - DO experimental descriptions</th>
                                 <th>{statsFile1Content.number_genes_with_non_null_do_experimental_description}</th>
                                 <th>{statsFile2Content.number_genes_with_non_null_do_experimental_description}</th>
                                 <th><Badge variant={statsFile2Content.number_genes_with_non_null_do_experimental_description - statsFile1Content.number_genes_with_non_null_do_experimental_description >= 0 ? "success" : "danger"}>{statsFile2Content.number_genes_with_non_null_do_experimental_description - statsFile1Content.number_genes_with_non_null_do_experimental_description}</Badge></th>
                             </tr>
                             <tr>
-                                <th>DO biomarker descriptions</th>
+                                <th>&ensp; - DO biomarker descriptions</th>
                                 <th>{statsFile1Content.number_genes_with_non_null_do_biomarker_description}</th>
                                 <th>{statsFile2Content.number_genes_with_non_null_do_biomarker_description}</th>
                                 <th><Badge variant={statsFile2Content.number_genes_with_non_null_do_biomarker_description - statsFile1Content.number_genes_with_non_null_do_biomarker_description >= 0 ? "success" : "danger"}>{statsFile2Content.number_genes_with_non_null_do_biomarker_description - statsFile1Content.number_genes_with_non_null_do_biomarker_description}</Badge></th>
                             </tr>
                             <tr>
-                                <th>DO orthology descriptions</th>
+                                <th>&ensp; - DO orthology descriptions</th>
                                 <th>{statsFile1Content.number_genes_with_non_null_do_orthology_description}</th>
                                 <th>{statsFile2Content.number_genes_with_non_null_do_orthology_description}</th>
                                 <th><Badge variant={statsFile2Content.number_genes_with_non_null_do_orthology_description - statsFile1Content.number_genes_with_non_null_do_orthology_description >= 0 ? "success" : "danger"}>{statsFile2Content.number_genes_with_non_null_do_orthology_description - statsFile1Content.number_genes_with_non_null_do_orthology_description}</Badge></th>
