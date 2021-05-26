@@ -23,6 +23,7 @@ const Dashboard = ({}) => {
                 </Col>
             </Row>
             <Row><Col>&nbsp;</Col></Row>
+            <Row><Col>&nbsp;</Col></Row>
             <Row className="justify-content-center">
                 <Col xs="auto">
                     <h5>Difference between previous release file and latest available file</h5>
@@ -31,13 +32,11 @@ const Dashboard = ({}) => {
             <Row className="justify-content-center">
                 <Col xs="auto">
                     <QuickDiff />
-                </Col>
-            </Row>
-            <Row className="justify-content-center">
-                <Col xs="auto">
                     Only release/stage files are included in this quick view
                 </Col>
             </Row>
+            <Row><Col>&nbsp;</Col></Row>
+            <Row><Col>&nbsp;</Col></Row>
             <Row><Col>&nbsp;</Col></Row>
             <Row className="justify-content-center">
                 <Col xs="auto">
