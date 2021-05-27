@@ -32,6 +32,7 @@ const QuickDiff = ({selectedMod, statsFiles, statsFilesAreLoading, fetchStatsFil
                 :
                 <div>
                     {statsFile1Content !== undefined && statsFile2Content !== undefined ?
+                        <div>
                         <Table striped bordered hover size="sm">
                             <thead>
                             <tr>
@@ -116,6 +117,8 @@ const QuickDiff = ({selectedMod, statsFiles, statsFilesAreLoading, fetchStatsFil
                             </tr>
                             </tbody>
                         </Table>
+                        Only release/stage files are included in this quick view
+                        </div>
                     : null}
                 </div>
             }

@@ -15,6 +15,8 @@ const TopNavBar = (props) => {
             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
             <Navbar.Collapse id="basic-navbar-nav">
                 <Nav className="mr-auto" activeKey={useLocation().pathname}>
+                    <Nav.Link eventKey="/dashboard" as={Link} to="/dashboard">Dashboard</Nav.Link>
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                     <Nav.Link eventKey="/mod_selection" as={Link} to="/mod_selection">1. Select MOD/Mode</Nav.Link>
                     <Nav.Link eventKey="/file_selection" as={Link} to="/file_selection">2. Select File(s)</Nav.Link>
                     <Nav.Link eventKey="/display_results" as={Link} to="/display_results">3. Display Results</Nav.Link>

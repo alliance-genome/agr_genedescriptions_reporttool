@@ -32,7 +32,6 @@ const Dashboard = ({}) => {
             <Row className="justify-content-center">
                 <Col xs="auto">
                     <QuickDiff />
-                    Only release/stage files are included in this quick view
                 </Col>
             </Row>
             <Row><Col>&nbsp;</Col></Row>
