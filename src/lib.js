@@ -61,7 +61,7 @@ export const getFirstStatsFilePathMatchingVersion = async (versionsArray, mod) =
         let selectedVersion = versionsArray.pop();
         let latestStatFile = await axios.get('https://fms.alliancegenome.org/api/datafile/by/' + selectedVersion + '/GENE-DESCRIPTION-STATS/' + mod + '?latest=true');
         if (latestStatFile.data.length > 0 && latestStatFile.data[0].s3Path.split('/')[0] === selectedVersion) {
-            return latestStatFile.data[0].s3Path;
+            return {s3Path: latestStatFile.data[0].s3Path, uploadDate: generateDateString(latestStatFile.data[0].uploadDate)};
         }
     }
     return undefined;
@@ -70,8 +70,12 @@ export const getFirstStatsFilePathMatchingVersion = async (versionsArray, mod) =
 export const getStatsFiles = async (mod) => {
     let versionsArr = await axios.get('https://fms.alliancegenome.org/api/releaseversion/all');
     let versions = versionsArr.data.map(version => version.releaseVersion).sort();
-    let nextVersionStatFilePath = await getFirstStatsFilePathMatchingVersion(versions, mod);
-    let currentVersionStatsFilePath = await getFirstStatsFilePathMatchingVersion(versions, mod);
+    let nextVersionStatFile = await getFirstStatsFilePathMatchingVersion(versions, mod);
+    let nextVersionStatFilePath = nextVersionStatFile.s3Path;
+    let nextVersionStatFileUploadDate = nextVersionStatFile.uploadDate;
+    let currentVersionStatsFile = await getFirstStatsFilePathMatchingVersion(versions, mod);
+    let currentVersionStatsFilePath = currentVersionStatsFile.s3Path;
+    let currentVersionStatsUploadDate = currentVersionStatsFile.uploadDate;
     let nextVersionStatFileContent = await requestAndGunzipBodyIfNecessary('https://download.alliancegenome.org/' + nextVersionStatFilePath);
     let currentVersionStatsContent = undefined;
     if (currentVersionStatsFilePath !== undefined) {
@@ -80,11 +84,13 @@ export const getStatsFiles = async (mod) => {
     return {
         statsFile1: {
             s3Path: currentVersionStatsFilePath,
-            content: currentVersionStatsContent
+            content: currentVersionStatsContent,
+            uploadDate: currentVersionStatsUploadDate
         },
         statsFile2: {
             s3Path: nextVersionStatFilePath,
-            content: nextVersionStatFileContent
+            content: nextVersionStatFileContent,
+            uploadDate: nextVersionStatFileUploadDate
         }
     };
 }

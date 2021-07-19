@@ -147,8 +147,10 @@ export default createReducer(initialState, {
         state.statsFilesAreLoading = false;
         state.statsFile1S3Path = action.payload.statsFile1S3Path;
         state.statsFile1Content = action.payload.statsFile1Content;
+        state.statsFile1UploadDate = action.payload.statsFile1UploadDate;
         state.statsFile2S3Path = action.payload.statsFile2S3Path;
         state.statsFile2Content = action.payload.statsFile2Content;
+        state.statsFile2UploadDate = action.payload.statsFile2UploadDate;
         state.statsFilesError = false;
     },
     FETCH_STATS_FILES_ERROR: (state, action) => {

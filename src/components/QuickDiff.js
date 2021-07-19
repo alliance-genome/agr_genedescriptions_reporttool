@@ -37,8 +37,8 @@ const QuickDiff = ({selectedMod, statsFiles, statsFilesAreLoading, fetchStatsFil
                             <thead>
                             <tr>
                                 <th>&nbsp;</th>
-                                <th>Previous Release ({statsFiles.statsFile1S3Path.split('/')[0]})</th>
-                                <th>Latest File ({statsFiles.statsFile2S3Path.split('/')[0]})</th>
+                                <th>Previous Release ({statsFiles.statsFile1S3Path.split('/')[0]}) <br/>{statsFiles.statsFile1UploadDate}</th>
+                                <th>Latest File ({statsFiles.statsFile2S3Path.split('/')[0]}) <br/>{statsFiles.statsFile2UploadDate}</th>
                                 <th>Difference</th>
                             </tr>
                             </thead>
@@ -117,7 +117,7 @@ const QuickDiff = ({selectedMod, statsFiles, statsFilesAreLoading, fetchStatsFil
                             </tr>
                             </tbody>
                         </Table>
-                        Only release/stage files are included in this quick view
+                            <center>Only release/stage files are included in this quick view</center>
                         </div>
                     : null}
                 </div>

@@ -92,7 +92,7 @@ export const fetchStatsFiles = (mod) => {
     return dispatch => {
         dispatch(fetchStatsFilesRequest());
         getStatsFiles(mod).then(res => {
-            dispatch(fetchStatsFilesSuccess(res.statsFile1.s3Path, JSON.stringify(res.statsFile1.content), res.statsFile2.s3Path, JSON.stringify(res.statsFile2.content)));
+            dispatch(fetchStatsFilesSuccess(res.statsFile1.s3Path, JSON.stringify(res.statsFile1.content), res.statsFile1.uploadDate, res.statsFile2.s3Path, JSON.stringify(res.statsFile2.content), res.statsFile2.uploadDate));
         }).catch(error => {
             dispatch(fetchStatsFilesError());
         })
@@ -103,13 +103,15 @@ export const fetchStatsFilesRequest = () => ({
     type: FETCH_STATS_FILES_REQUEST
 });
 
-export const fetchStatsFilesSuccess = (statsFile1S3Path, statsFile1Content, statsFile2S3Path, statsFile2Content) => ({
+export const fetchStatsFilesSuccess = (statsFile1S3Path, statsFile1Content, statsFile1UploadDate, statsFile2S3Path, statsFile2Content, statsFile2UploadDate) => ({
     type: FETCH_STATS_FILES_SUCCESS,
     payload: {
         statsFile1S3Path: statsFile1S3Path,
         statsFile1Content: statsFile1Content,
+        statsFile1UploadDate: statsFile1UploadDate,
         statsFile2S3Path: statsFile2S3Path,
-        statsFile2Content: statsFile2Content
+        statsFile2Content: statsFile2Content,
+        statsFile2UploadDate: statsFile2UploadDate
     }
 });
 
