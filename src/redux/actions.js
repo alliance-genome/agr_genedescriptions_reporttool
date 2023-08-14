@@ -1,4 +1,5 @@
 import {generateFmsJsonUrl, getS3PathsFromFms, getStatsFiles, requestAndGunzipBodyIfNecessary} from "../lib";
+import axios from 'axios';
 
 export const SET_SELECTED_MOD = "SET_SELECTED_MOD";
 export const SET_MODS_LIST = "SET_MODS_LIST";
@@ -32,22 +33,17 @@ export const FETCH_STATS_FILES_ERROR = "FETCH_STATS_FILES_ERROR";
 
 export const fetchModsList = (selectedMod) => {
     return async dispatch => {
-        let urlRoot = process.env.REACT_APP_URLROOT !== undefined ? process.env.REACT_APP_URLROOT :
-            'https://reports.alliancegenome.org/';
-        let urlTemplate = urlRoot;
-        if (urlRoot.match(/textpresso/)) {
-            urlTemplate = urlRoot + 'index.xml';
-        }
-        let response = await fetch(urlTemplate);
-        let res = await response.text();
-        let arrayFiles = res.match(/gene-descriptions[^<]*?\/\d{8}\/[^<]*?\.json/g);
-        let mods = [...new Set(arrayFiles.map(arrayFile =>
-            arrayFile.match(/gene-descriptions\/(.*?)\/\d{8}\/(\d{8})_([\w]*?)\.json/)[3]))];
+        let all_snapshots_res = await axios.get('https://fms.alliancegenome.org/api/snapshot/all');
+        let latest_snapshot = all_snapshots_res.data[all_snapshots_res.data.length - 1].releaseVersion.releaseVersion;
+        let snapshot_content = await axios.get('https://fms.alliancegenome.org/api/snapshot/release/' + latest_snapshot);
+        let mods = snapshot_content.data.snapShot.dataFiles
+            .filter(dataFile => dataFile.dataType.name === "GENE-DESCRIPTION-JSON")
+            .map(dataFile => dataFile.dataSubType.name);
         dispatch(setModsList(mods))
         if (selectedMod !== undefined) {
-            dispatch(setSelectedMod(selectedMod));
+           dispatch(setSelectedMod(selectedMod));
         } else {
-            dispatch(setSelectedMod(mods[0]))
+           dispatch(setSelectedMod(mods[0]))
         }
     }
 }

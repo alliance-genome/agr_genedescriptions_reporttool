@@ -60,8 +60,9 @@ export const getFirstStatsFilePathMatchingVersion = async (versionsArray, mod) =
     while (versionsArray.length > 0) {
         let selectedVersion = versionsArray.pop();
         let latestStatFile = await axios.get('https://fms.alliancegenome.org/api/datafile/by/' + selectedVersion + '/GENE-DESCRIPTION-STATS/' + mod + '?latest=true');
+        let latestJsonFile = await axios.get('https://fms.alliancegenome.org/api/datafile/by/' + selectedVersion + '/GENE-DESCRIPTION-JSON/' + mod + '?latest=true');
         if (latestStatFile.data.length > 0 && latestStatFile.data[0].s3Path.split('/')[0] === selectedVersion) {
-            return {s3Path: latestStatFile.data[0].s3Path, uploadDate: generateDateString(latestStatFile.data[0].uploadDate)};
+            return {s3Path: latestStatFile.data[0].s3Path, uploadDate: generateDateString(latestJsonFile.data[0].uploadDate)};
         }
     }
     return undefined;
