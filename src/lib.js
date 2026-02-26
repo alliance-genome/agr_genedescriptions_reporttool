@@ -104,7 +104,7 @@ export const requestAndGunzipBodyIfNecessary = (url) => {
         }
         axios.get(url, config)
             .then(function (response) {
-                if (response.headers['content-type'] === 'application/x-gzip') {
+                if (response.headers['content-type'] === 'application/x-gzip' || url.endsWith('.gz')) {
                     resolve(JSON.parse(pako.inflate(response.data, {to: 'string'})));
                 } else {
                     resolve(response.data);
