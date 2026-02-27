@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {connect} from "react-redux";
 import {
     areFilesContentCurrent,
@@ -10,16 +10,16 @@ import {
     getDiffFilterPhraseCS,
     getFilesContent, getSelectedFilesInfo,
     getSelectedMod,
-    getViewEntriesPerPage,
     getViewFilterHasData,
     getViewFilterMinFinalExpGOIDCount,
     getViewFilterMinFinalExpGOIDOp,
     getViewFilterOntologyID,
-    getViewPageNum, getViewSelectedDisplayFields
+    getViewSelectedDisplayFields
 } from "../redux/selectors";
 import {Button, Col, Container, Row, Spinner} from "react-bootstrap";
-import {fetchFileContent, setViewPageNum} from "../redux/actions";
+import {fetchFileContent} from "../redux/actions";
 import {statFieldIsFirstOption} from "../lib";
+import {AgGridReact} from 'ag-grid-react';
 
 const ViewFileViewer = (props) => {
 
@@ -30,17 +30,6 @@ const ViewFileViewer = (props) => {
     const [isLoading, setIsLoading] = useState(true);
     const [showError, setShowError] = useState(false);
     const [showAllGeneralStats, setShowAllGeneralStats] = useState(false);
-
-    const handleSubmitLoadNextPage = () => {
-        let nextPage = props.viewPageNum + 1;
-        props.setViewPageNum(nextPage);
-    }
-
-    const handleSubmitLoadPrevPage = () => {
-        let prevPage = props.viewPageNum - 1;
-        if (prevPage < 1) { prevPage = 1; }
-        props.setViewPageNum(prevPage);
-    }
 
     useEffect(() => {
         if (props.selectedFilesInfo[0] !== undefined && !props.areFilesContentCurrent) {
@@ -62,16 +51,13 @@ const ViewFileViewer = (props) => {
                 setShowError(true);
             }
         }
-    }, [props.fileContent, props.viewPageNum, props.selectedFilesInfo])
+    }, [props.fileContent, props.selectedFilesInfo])
 
     const processDataLoad = (response) => {
         return new Promise((resolve, reject) => {
-            let tempRowsTableLoad = [];	// don't want to add each row one at a time and render it, add to this array and update all table rows at once
-            let tempRowsTableStats = [];	// don't want to add each row one at a time and render it, add to this array and update all table rows at once
+            let tempRowsTableLoad = [];
+            let tempRowsTableStats = [];
             setRowsTableLoad([]);
-            let skipCount = (props.viewPageNum - 1) * props.viewEntriesPerPage - 1;
-            let doneCount = props.viewPageNum * props.viewEntriesPerPage - 1;
-            let matchCount = 0;
             let fieldsMatchCount = [];
             let showFieldsMatchCount = [];
             props.diffFields.forEach(diffField => {
@@ -95,7 +81,7 @@ const ViewFileViewer = (props) => {
                 }
                 const item = {field: renamedField, value: value};
                 tempRowsTableStats.push(item);
-                if (field === "number_genes_with_non_null_description") {		// for now while Valerio hasn't put the stat in
+                if (field === "number_genes_with_non_null_description") {
                     let thisValue = response.general_stats["total_number_of_genes"] - response.general_stats["number_genes_with_non_null_description"];
                     const item = {field: "number_genes_with_no_description", value: thisValue};
                     tempRowsTableStats.push(item);
@@ -177,22 +163,22 @@ const ViewFileViewer = (props) => {
                                 } else {
                                     let lines = props.diffFilterGeneName.split("\n");
                                     for (let k in lines) {
-                                        if (props.diffFilterGeneNameSubstr === true) {	// substring search
-                                            if (props.diffFilterGeneNameCS === false) {	// not case sensitive
+                                        if (props.diffFilterGeneNameSubstr === true) {
+                                            if (props.diffFilterGeneNameCS === false) {
                                                 if (gene_name.toUpperCase().includes(lines[k].toUpperCase())) {
                                                     genenamePass = true;
                                                 }
-                                            } else {							// case sensitive
+                                            } else {
                                                 if (gene_name.includes(lines[k])) {
                                                     genenamePass = true;
                                                 }
                                             }
-                                        } else {							// exact match search
-                                            if (props.diffFilterGeneNameCS === false) {	// not case sensitive
+                                        } else {
+                                            if (props.diffFilterGeneNameCS === false) {
                                                 if (gene_name.toUpperCase() === lines[k].toUpperCase()) {
                                                     genenamePass = true;
                                                 }
-                                            } else {							// case sensitive
+                                            } else {
                                                 if (gene_name === lines[k]) {
                                                     genenamePass = true;
                                                 }
@@ -215,22 +201,20 @@ const ViewFileViewer = (props) => {
                                 if ((keywordPass === true) && (genenamePass === true) && (ontologyPass === true)) {
                                     geneHasSomeData = true;
                                     fieldsMatchCount[diffField.name] += 1;
-                                    if ((matchCount > skipCount) && (matchCount <= doneCount)) {
-                                        const item = {
-                                            gene_id: gene_id,
-                                            gene_name: gene_name,
-                                            field: diffField.name,
-                                            text: diffFieldValue
-                                        };
-                                        tempRowsTableLoad.push(item);
-                                    }
+                                    const item = {
+                                        gene_id: gene_id,
+                                        gene_name: gene_name,
+                                        field: diffField.name,
+                                        text: diffFieldValue
+                                    };
+                                    tempRowsTableLoad.push(item);
                                 }
                             }
                         }
                     });
 
                     if (geneHasSomeData) {
-                        matchCount++;
+                        // matchCount tracked implicitly by tempRowsTableLoad length
                     }
                 }
             }
@@ -241,6 +225,21 @@ const ViewFileViewer = (props) => {
         });
     }
 
+    const defaultColDef = useMemo(() => ({
+        resizable: true,
+        sortable: true,
+        filter: true,
+        wrapText: true,
+        autoHeight: true,
+    }), []);
+
+    const loadColumnDefs = useMemo(() => [
+        {headerName: 'Gene ID', field: 'gene_id', width: 140, wrapText: false, autoHeight: false},
+        {headerName: 'Gene Name', field: 'gene_name', width: 130, wrapText: false, autoHeight: false},
+        {headerName: 'Field', field: 'field', width: 180, wrapText: false, autoHeight: false},
+        {headerName: 'Text', field: 'text', flex: 1},
+    ], []);
+
     return (
         <Container fluid>
             <Row className="justify-content-center">
@@ -248,8 +247,8 @@ const ViewFileViewer = (props) => {
                     <h5>View a File</h5>
                 </Col>
             </Row>
-            <Row className="justify-content-center">
-                <Col xs="auto">
+            <Row>
+                <Col>
                     {isLoading ?
                         <Spinner animation="grow" />
                         : null}
@@ -295,42 +294,18 @@ const ViewFileViewer = (props) => {
                                     )}}, this)}
                             <br />
 
-                            <label>
-                                File Load Result:<br/>
-                                <input type="button" value="Previous Page" onClick={handleSubmitLoadPrevPage}/>
-                                &nbsp;&nbsp;Page {props.viewPageNum}&nbsp;&nbsp;
-                                <input type="button" value="Next Page" onClick={handleSubmitLoadNextPage}/><br/>
-                            </label>
-                            <label>
-                                <table
-                                    name="table_load"
-                                    id="table_load" >
-                                    <thead>
-                                    <tr>
-                                        <th id="header_geneid" name="header_geneid">Gene ID</th>
-                                        <th id="header_genename" name="header_genename">Gene Name</th>
-                                        <th id="header_field" name="header_field">Field</th>
-                                        <th id="header_text" name="header_text">Text</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody id="table_load_body" name="table_load_body">
-                                    {rowsTableLoad.map((item, idx) => (
-                                        <tr id="addr0" key={idx}>
-                                            <td>{rowsTableLoad[idx].gene_id}</td>
-                                            <td>{rowsTableLoad[idx].gene_name}</td>
-                                            <td>{rowsTableLoad[idx].field}</td>
-                                            <td>{rowsTableLoad[idx].text}</td>
-                                        </tr>
-                                    ))}
-                                    </tbody>
-                                </table><br/>
-                            </label>
-                            <label>
-                                <input type="button" value="Previous Page" onClick={handleSubmitLoadPrevPage}/>
-                                &nbsp;&nbsp;Page {props.viewPageNum}&nbsp;&nbsp;
-                                <input type="button" value="Next Page" onClick={handleSubmitLoadNextPage}/><br/>
-                                <br/>
-                            </label>
+                            <label>File Load Result:</label>
+                            <div style={{width: '100%', minHeight: 400}}>
+                                <AgGridReact
+                                    rowData={rowsTableLoad}
+                                    columnDefs={loadColumnDefs}
+                                    defaultColDef={defaultColDef}
+                                    domLayout="autoHeight"
+                                    pagination={true}
+                                    paginationPageSize={50}
+                                    paginationPageSizeSelector={[20, 50, 100, 500]}
+                                />
+                            </div>
                         </> : null}
                 </Col>
             </Row>
@@ -339,8 +314,6 @@ const ViewFileViewer = (props) => {
 }
 
 const mapStateToProps = state => ({
-    viewPageNum: getViewPageNum(state),
-    viewEntriesPerPage: getViewEntriesPerPage(state),
     fileContent: getFilesContent(state)[0],
     selectedFilesInfo: getSelectedFilesInfo(state),
     selectedMod: getSelectedMod(state),
@@ -358,4 +331,4 @@ const mapStateToProps = state => ({
     viewSelectedDisplayFields: getViewSelectedDisplayFields(state)
 });
 
-export default connect(mapStateToProps, {fetchFileContent, setViewPageNum})(ViewFileViewer);
+export default connect(mapStateToProps, {fetchFileContent})(ViewFileViewer);

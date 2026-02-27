@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {
     getDiffFilterGeneName,
     getSelectedDiffField,
@@ -12,9 +12,10 @@ import {
     areFilesContentCurrent, getFileLoadingError
 } from "../redux/selectors";
 import {connect} from "react-redux";
-import {Button, Col, Container, Row, Spinner} from "react-bootstrap";
+import {Col, Container, Row, Spinner, Tab, Tabs} from "react-bootstrap";
 import {fetchFileContent} from "../redux/actions";
-import {statFieldIsFirstOption} from "../lib";
+import {AgGridReact} from 'ag-grid-react';
+import DiffHighlight from './DiffHighlight';
 
 
 const DiffViewer = (props) => {
@@ -22,9 +23,10 @@ const DiffViewer = (props) => {
     const [rowsTableDiffStats, setRowsTableDiffStats] = useState([]);
     const [rowsTableDiff, setRowsTableDiff] = useState([]);
     const [textDivDiffResults, setTextDivDiffResults] = useState("");
+    const [createdGenesInfo, setCreatedGenesInfo] = useState({text: 'None', null: 'None'});
+    const [removedGenesInfo, setRemovedGenesInfo] = useState({text: 'None', null: 'None'});
     const [isLoading, setIsLoading] = useState(true);
     const [showError, setShowError] = useState(false);
-    const [showAllGeneralStats, setShowAllGeneralStats] = useState(false);
 
     useEffect(() => {
         if (props.selectedFilesInfo[0] !== undefined && props.selectedFilesInfo[1] !== undefined && !props.areFilesContentCurrent) {
@@ -107,8 +109,7 @@ const DiffViewer = (props) => {
                 createdGenesText = createdGenes['text'].join(', '); }
             if (!(createdGenes['null'] === undefined || createdGenes['null'].length === 0)) {
                 createdGenesNull = createdGenes['null'].join(', '); }
-            retTextDivDiffResults += "Created Genes with Text in description:\n" + createdGenesText + "\n\n";
-            retTextDivDiffResults += "Created Genes with Null in description:\n" + createdGenesNull + "\n\n";
+            setCreatedGenesInfo({text: createdGenesText, null: createdGenesNull});
 
             let removedGenes = {};
             removedGenes['text'] = [];
@@ -125,8 +126,7 @@ const DiffViewer = (props) => {
                 removedGenesText = removedGenes['text'].join(', '); }
             if (!(removedGenes['null'] === undefined || removedGenes['null'].length === 0)) {
                 removedGenesNull = removedGenes['null'].join(', '); }
-            retTextDivDiffResults += "Removed Genes with Text in description:\n" + removedGenesText + "\n\n";
-            retTextDivDiffResults += "Removed Genes with Null in description:\n" + removedGenesNull + "\n\n";
+            setRemovedGenesInfo({text: removedGenesText, null: removedGenesNull});
 
             if (props.diffFilterPhrase !== '') {
                 retTextDivDiffResults += "Filtering on keyword " + props.diffFilterPhrase + "\n\n";
@@ -198,6 +198,37 @@ const DiffViewer = (props) => {
 
     }
 
+    const defaultColDef = useMemo(() => ({
+        resizable: true,
+        sortable: true,
+        filter: true,
+        wrapText: true,
+        autoHeight: true,
+    }), []);
+
+    const diffColumnDefs = useMemo(() => [
+        {headerName: 'Gene', field: 'geneid', width: 140, wrapText: false, autoHeight: false},
+        {headerName: 'Name', field: 'genename', width: 120, wrapText: false, autoHeight: false},
+        {
+            headerName: props.selectedFilesInfo[0] ? props.selectedFilesInfo[0].uploadDate : 'File 1',
+            field: 'desc1',
+            flex: 1,
+            cellRenderer: (params) => {
+                const rowData = params.data;
+                return <DiffHighlight oldText={rowData.desc1} newText={rowData.desc2} perspective="old" />;
+            },
+        },
+        {
+            headerName: props.selectedFilesInfo[1] ? props.selectedFilesInfo[1].uploadDate : 'File 2',
+            field: 'desc2',
+            flex: 1,
+            cellRenderer: (params) => {
+                const rowData = params.data;
+                return <DiffHighlight oldText={rowData.desc1} newText={rowData.desc2} perspective="new" />;
+            },
+        },
+    ], [props.selectedFilesInfo]);
+
     return (
         <Container fluid>
             <Row className="justify-content-center">
@@ -205,8 +236,8 @@ const DiffViewer = (props) => {
                     <h5>Compare Files</h5>
                 </Col>
             </Row>
-            <Row className="justify-content-center">
-                <Col xs="auto">
+            <Row>
+                <Col>
                     {isLoading && !showError && !props.fileLoadingError ?
                         <Spinner animation="grow" />
                         : null}
@@ -215,61 +246,67 @@ const DiffViewer = (props) => {
                     {showError ?
                         'No files selected' : null}
                     {!isLoading && !showError ?
-                        <div>
-                            General Stats:
-                            <table
-                                name="table_diff_stats"
-                                id="table_diff_stats" >
-                                <thead>
-                                <tr>
-                                    <th>field</th>
-                                    <th id="header_stats_date1" name="header_stats_date1">{props.selectedFilesInfo[0] ? props.selectedFilesInfo[0].uploadDate : ''}</th>
-                                    <th id="header_stats_date2" name="header_stats_date2">{props.selectedFilesInfo[1] ? props.selectedFilesInfo[1].uploadDate : ''}</th>
-                                </tr>
-                                </thead>
-                                <tbody id="table_diff_stats_body" name="table_diff_stats_body">
-                                {rowsTableDiffStats.filter(item => showAllGeneralStats || statFieldIsFirstOption(item.field)).map(item => (
-                                        <tr>
-                                            <td>{item.field}</td>
-                                            <td>{item.date1}</td>
-                                            <td>{item.date2}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                            <br/>
-                            <Button variant="outline-success" onClick={() => setShowAllGeneralStats(!showAllGeneralStats)}>{showAllGeneralStats ? "Show less stats" : "Show more stats"}</Button>
-                            <br/>
-                            <br/>
-                            <div
-                                name="div_diff_results_text"
-                                id="div_diff_results_text"
-                                style={{whiteSpace: 'pre-line'}}>
-                                {textDivDiffResults}
-                            </div>
-                            <table
-                                name="table_diff"
-                                id="table_diff" >
-                                <thead>
-                                <tr>
-                                    <th>gene</th>
-                                    <th>name</th>
-                                    <th id="header_diff_date1" name="header_diff_date1">{props.selectedFilesInfo[0] ? props.selectedFilesInfo[0].uploadDate : ''}</th>
-                                    <th id="header_diff_date2" name="header_diff_date2">{props.selectedFilesInfo[1] ? props.selectedFilesInfo[1].uploadDate : ''}</th>
-                                </tr>
-                                </thead>
-                                <tbody id="table_diff_body" name="table_diff_body">
-                                {rowsTableDiff.map((item, idx) => (
-                                    <tr id="addr0" key={idx}>
-                                        <td>{rowsTableDiff[idx].geneid}</td>
-                                        <td>{rowsTableDiff[idx].genename}</td>
-                                        <td>{rowsTableDiff[idx].desc1}</td>
-                                        <td>{rowsTableDiff[idx].desc2}</td>
+                        <Tabs defaultActiveKey="diff" className="mb-3">
+                            <Tab eventKey="diff" title="Descriptions Diff">
+                                <div
+                                    name="div_diff_results_text"
+                                    id="div_diff_results_text"
+                                    style={{whiteSpace: 'pre-line'}}>
+                                    {textDivDiffResults}
+                                </div>
+                                <div style={{width: '100%', minHeight: 400}}>
+                                    <AgGridReact
+                                        rowData={rowsTableDiff}
+                                        columnDefs={diffColumnDefs}
+                                        defaultColDef={defaultColDef}
+                                        domLayout="autoHeight"
+                                        pagination={true}
+                                        paginationPageSize={50}
+                                        paginationPageSizeSelector={[20, 50, 100, 500]}
+                                    />
+                                </div>
+                            </Tab>
+                            <Tab eventKey="stats" title="General Stats">
+                                <table
+                                    name="table_diff_stats"
+                                    id="table_diff_stats" >
+                                    <thead>
+                                    <tr>
+                                        <th>field</th>
+                                        <th id="header_stats_date1" name="header_stats_date1">{props.selectedFilesInfo[0] ? props.selectedFilesInfo[0].uploadDate : ''}</th>
+                                        <th id="header_stats_date2" name="header_stats_date2">{props.selectedFilesInfo[1] ? props.selectedFilesInfo[1].uploadDate : ''}</th>
                                     </tr>
-                                ))}
-                                </tbody>
-                            </table>
-                        </div> : null}
+                                    </thead>
+                                    <tbody id="table_diff_stats_body" name="table_diff_stats_body">
+                                    {rowsTableDiffStats.map(item => {
+                                        const v1 = parseFloat(item.date1);
+                                        const v2 = parseFloat(item.date2);
+                                        let bg1 = undefined;
+                                        let bg2 = undefined;
+                                        if (!isNaN(v1) && !isNaN(v2)) {
+                                            if (v2 > v1) { bg1 = '#f8d7da'; bg2 = '#d4edda'; }
+                                            else if (v2 < v1) { bg1 = '#d4edda'; bg2 = '#f8d7da'; }
+                                        }
+                                        return (
+                                            <tr key={item.field}>
+                                                <td>{item.field}</td>
+                                                <td style={bg1 ? {backgroundColor: bg1} : undefined}>{item.date1}</td>
+                                                <td style={bg2 ? {backgroundColor: bg2} : undefined}>{item.date2}</td>
+                                            </tr>
+                                        );
+                                    })}
+                                    </tbody>
+                                </table>
+                            </Tab>
+                            <Tab eventKey="created-removed" title="Created/Removed Genes">
+                                <div style={{whiteSpace: 'pre-line', marginTop: '0.5rem'}}>
+                                    {"Created Genes with Text in description:\n" + createdGenesInfo.text + "\n\n"}
+                                    {"Created Genes with Null in description:\n" + createdGenesInfo.null + "\n\n"}
+                                    {"Removed Genes with Text in description:\n" + removedGenesInfo.text + "\n\n"}
+                                    {"Removed Genes with Null in description:\n" + removedGenesInfo.null + "\n\n"}
+                                </div>
+                            </Tab>
+                        </Tabs> : null}
                 </Col>
             </Row>
         </Container>

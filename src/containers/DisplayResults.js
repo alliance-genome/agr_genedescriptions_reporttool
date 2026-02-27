@@ -18,8 +18,8 @@ const DisplayResults = (props) => {
     return (
         <Container fluid>
             <Row><Col>&nbsp;</Col></Row>
-            <Row className="justify-content-center">
-                <Col xs="auto">
+            <Row>
+                <Col>
                     {props.selectedOperation === 'diff' ? <DiffViewer/> : null}
                     {props.selectedOperation === 'download' ? <DownloadFileViewer/> : null}
                     {props.selectedOperation === 'view' ? <ViewFileViewer/> : null}
