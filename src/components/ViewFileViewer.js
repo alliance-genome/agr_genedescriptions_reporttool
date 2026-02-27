@@ -301,6 +301,8 @@ const ViewFileViewer = (props) => {
                                     columnDefs={loadColumnDefs}
                                     defaultColDef={defaultColDef}
                                     domLayout="autoHeight"
+                                    enableCellTextSelection={true}
+                                    ensureDomOrder={true}
                                     pagination={true}
                                     paginationPageSize={50}
                                     paginationPageSizeSelector={[20, 50, 100, 500]}

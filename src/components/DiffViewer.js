@@ -260,6 +260,8 @@ const DiffViewer = (props) => {
                                         columnDefs={diffColumnDefs}
                                         defaultColDef={defaultColDef}
                                         domLayout="autoHeight"
+                                        enableCellTextSelection={true}
+                                        ensureDomOrder={true}
                                         pagination={true}
                                         paginationPageSize={50}
                                         paginationPageSizeSelector={[20, 50, 100, 500]}
