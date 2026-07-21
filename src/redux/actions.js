@@ -33,12 +33,11 @@ export const FETCH_STATS_FILES_ERROR = "FETCH_STATS_FILES_ERROR";
 
 export const fetchModsList = (selectedMod) => {
     return async dispatch => {
-        let all_snapshots_res = await axios.get('https://fms.alliancegenome.org/api/snapshot/all');
-        let latest_snapshot = all_snapshots_res.data[all_snapshots_res.data.length - 1].releaseVersion.releaseVersion;
-        let snapshot_content = await axios.get('https://fms.alliancegenome.org/api/snapshot/release/' + latest_snapshot);
-        let mods = snapshot_content.data.snapShot.dataFiles
-            .filter(dataFile => dataFile.dataType.name === "GENE-DESCRIPTION-JSON")
-            .map(dataFile => dataFile.dataSubType.name);
+        // Derive the MOD list from the FMS datafile endpoint (the latest file per MOD
+        // for the GENE-DESCRIPTION-JSON data type) rather than a release snapshot, so
+        // the list does not depend on a snapshot having been generated for the release.
+        let dataFilesRes = await axios.get('https://fms.alliancegenome.org/api/datafile/by/GENE-DESCRIPTION-JSON?latest=true');
+        let mods = [...new Set(dataFilesRes.data.map(dataFile => dataFile.dataSubType.name))].sort();
         dispatch(setModsList(mods))
         if (selectedMod !== undefined) {
            dispatch(setSelectedMod(selectedMod));
